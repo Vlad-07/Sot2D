@@ -3,17 +3,17 @@
 
 #include <imgui.h> // Should remove from aditional include dirs
 
-#include "MainLayer.h"
+#include "ServerLayer.h"
 
 
 class ServerApp : public Eis::Application
 {
 public:
-	ServerApp()
+	ServerApp() : Application(Eis::WindowProps("Sot2D GUI Server", 300, 200))
 	{
-		PushLayer(new MainLayer());
+		PushLayer(new ServerLayer());
 	}
-
+	
 	~ServerApp() = default;
 };
 

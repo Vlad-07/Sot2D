@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <Eis/Networking/Server.h>
 
+
 typedef uint16_t ClientId;
 
 class NetClient

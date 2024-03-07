@@ -65,17 +65,14 @@ project "Sot2D_client"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "EIS_DEBUG"
 		runtime "Debug"
 		symbols "on"
-
-	filter "configurations:Release"
-		defines "EIS_RELEASE"
+		
+	filter "configurations:Distrib"
 		runtime "Release"
 		optimize "on"
 
-	filter "configurations:Distrib"
-		defines "EIS_DISTRIB"
+	filter "configurations:Release"
 		runtime "Release"
 		optimize "on"
 
@@ -118,16 +115,13 @@ project "Sot2D_server"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "EIS_DEBUG"
 		runtime "Debug"
 		symbols "on"
 
-	filter "configurations:Release"
-		defines "EIS_RELEASE"
+	filter "configurations:Distrib"
 		runtime "Release"
 		optimize "on"
 
-	filter "configurations:Distrib"
-		defines "EIS_DISTRIB"
+	filter "configurations:Release"
 		runtime "Release"
 		optimize "on"

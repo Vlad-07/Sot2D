@@ -3,15 +3,15 @@
 
 #include <imgui.h> // Should remove from aditional include dirs
 
-#include "MainLayer.h"
+#include "GameLayer.h"
 
 
 class ClientApp : public Eis::Application
 {
 public:
-	ClientApp()
+	ClientApp() : Application(Eis::WindowProps("Sot2D"))
 	{
-		PushLayer(new MainLayer());
+		PushLayer(new GameLayer());
 	}
 
 	~ClientApp() = default;
