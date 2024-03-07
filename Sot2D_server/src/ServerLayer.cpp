@@ -1,13 +1,10 @@
 #include "ServerLayer.h"
 
-#include "../../Sot2D_client/src/Game/Island.cpp" // HACK: compile them files
-#include "../../Sot2D_client/src/Game/Terrain.cpp"
-
 
 ServerLayer* ServerLayer::s_Instance = nullptr;
 
 
-ServerLayer::ServerLayer() : Layer("ServerLayer"), m_Server(8000), m_Terrain(0, nullptr)
+ServerLayer::ServerLayer() : Layer("ServerLayer"), m_Server(8000), m_TerrainManager()
 {
 	EIS_ASSERT(!s_Instance, "Main Layer already exists!");
 	s_Instance = this;
@@ -29,9 +26,6 @@ void ServerLayer::OnAttach()
 	m_Server.SetClientConnectedCallback(ClientConnectedCallback);
 	m_Server.SetClientDisconnectedCallback(ClientDisconnectedCallback);
 	m_Server.SetDataReceivedCallback(DataRecievedCallback);
-
-	// Init game
-	m_Terrain.GenerateIslands(10, glm::vec2(0));
 }
 void ServerLayer::OnDetach()
 {
@@ -53,7 +47,9 @@ void ServerLayer::OnImGuiRender()
 {
 	EIS_PROFILE_FUNCTION();
 
-	ImGui::Begin("Server", nullptr, commonFlags);
+	ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(200, 120), ImGuiCond_Appearing);
+	ImGui::Begin("Server", nullptr, m_CommonFlags);
 
 	if (m_Server.IsRunning() == false) // Init
 	{
@@ -64,6 +60,7 @@ void ServerLayer::OnImGuiRender()
 
 		if (ImGui::Button("Start"))
 		{
+			m_TerrainManager.InitStartingArea();
 			m_Server.SetPort(port);
 			m_Server.Start();
 		}

@@ -1,12 +1,13 @@
 #include "GameLayer.h"
 
+#include <glm/gtc/type_ptr.hpp>
 #include "../../Sot2D_server/src/Network/NetPackets.h" // HACK
 
 
 GameLayer* GameLayer::s_Instance = nullptr;
 
 
-GameLayer::GameLayer() : Layer("GameLayer"), m_LocalPlayer(), m_PauseOpen(false), m_PerformanceOpen(false), m_DeltaTime()
+GameLayer::GameLayer() : Layer("GameLayer"), m_LocalPlayer(), m_PauseOpen(false), m_PerformanceOpen(false), m_DeltaTime(), m_Terrain()
 {
 	EIS_ASSERT(!s_Instance, "Layer already exists!");
 	s_Instance = this;
@@ -58,17 +59,21 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	for (NetPlayer& p : m_NetworkPlayers)
 		p.Interpolate();
 
+//	m_Terrain.UnloadFarIslands(m_LocalPlayer.GetPos());
+
 	// Update Network
 	if (m_LocalPlayer.HasMoved())
 	{
-		UpdatePacket packet(UpdateType::MOVEMENT, 0, &m_LocalPlayer.GetPos(), sizeof(glm::vec2));
+		glm::vec2 newPos = m_LocalPlayer.GetPos();
+		UpdatePacket packet(UpdateType::MOVEMENT, 0, &newPos, sizeof(glm::vec2));
 		m_Client.SendBuffer(UpdatePacket::CreateBuffer(packet));
 	}
 
 	// Rendering
 	Eis::Renderer2D::BeginScene(m_LocalPlayer.GetCameraController().GetCamera());
 
-	Eis::Renderer2D::DrawQuad(glm::vec3(0), glm::vec2(15), m_Map);
+//	Eis::Renderer2D::DrawQuad(glm::vec3(0), glm::vec2(15), m_Map);
+	m_Terrain.RenderIslands(m_LocalPlayer.GetPos());
 
 	for (const NetPlayer& p : m_NetworkPlayers)
 		Eis::Renderer2D::DrawRotatedQuad(p.GetPos(), glm::vec2(1), p.GetRotation() + glm::radians(20.0f), m_NetPlayerTex); // angle the mouche texture to forward
@@ -87,7 +92,7 @@ void GameLayer::OnImGuiRender()
 	{
 		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(265, 100), ImGuiCond_Appearing);
-		ImGui::Begin("Main Menu", nullptr, commonFlags);
+		ImGui::Begin("Main Menu", nullptr, m_CommonFlags);
 
 		static char ip[32] = "127.0.0.1:8000";
 		if (m_Client.GetConnectionStatus() != Eis::Client::Connecting) // Select where to connect
@@ -116,7 +121,7 @@ void GameLayer::OnImGuiRender()
 		{
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 			ImGui::SetNextWindowSize(ImVec2(100, 50), ImGuiCond_Appearing);
-			ImGui::Begin("##PauseMenu", nullptr, commonFlags | ImGuiWindowFlags_NoTitleBar);
+			ImGui::Begin("##PauseMenu", nullptr, m_CommonFlags | ImGuiWindowFlags_NoTitleBar);
 			if (ImGui::Button("Disconnect"))
 				m_Client.Disconnect();
 			ImGui::End();
@@ -126,16 +131,14 @@ void GameLayer::OnImGuiRender()
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Appearing);
 			ImGui::SetNextWindowSize(ImVec2(130, 50), ImGuiCond_Appearing);
 			ImGui::SetNextWindowBgAlpha(0.1f);
-			ImGui::Begin("##PerformanceMenu", nullptr, commonFlags | ImGuiWindowFlags_NoTitleBar);
+			ImGui::Begin("##PerformanceMenu", nullptr, m_CommonFlags | ImGuiWindowFlags_NoTitleBar);
 			ImGui::Text("%.0f FPS (%.1f ms)", 1.0f / m_DeltaTime, m_DeltaTime.GetMilliseconds());
-#ifdef EIS_DEBUG
 			if (ImGui::Button("God mode"))
 			{
-				m_LocalPlayer.GetCameraController().SetMaxZoom(100.0f);
-				m_LocalPlayer.GetCameraController().SetZoomSpeedEffect(true);
-				m_LocalPlayer.GetCameraController().SetCameraSpeed(10.0f);
+				m_LocalPlayer.GetCameraController().SetMaxZoom(1000.0f);
+				m_LocalPlayer.GetCameraController().SetZoom(1000.0f);
+				m_LocalPlayer.GetCameraController().SetCameraSpeed(200.0f);
 			}
-#endif
 			ImGui::End();
 		}
 	}
@@ -172,6 +175,7 @@ void GameLayer::InitSession()
 {
 	m_LocalPlayer.Init();
 	m_NetworkPlayers.clear();
+	m_Terrain.Clear();
 	m_PauseOpen = false;
 }
 

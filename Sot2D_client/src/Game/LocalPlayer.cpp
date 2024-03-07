@@ -25,6 +25,10 @@ void LocalPlayer::Init()
 {
 	m_OldPos = m_Pos = glm::vec2(0);
 	m_CameraController.SetPosition(glm::vec3(0));
+	m_CameraController.SetCameraSpeed(5.0f);
+	m_CameraController.SetMinZoom(2.0f);
+	m_CameraController.SetMaxZoom(6.0f);
+	m_CameraController.SetZoom(2.0f);
 }
 
 void LocalPlayer::OnUpdate(Eis::TimeStep ts)

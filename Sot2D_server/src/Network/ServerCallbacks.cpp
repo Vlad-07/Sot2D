@@ -5,28 +5,39 @@
 void ServerLayer::ClientConnectedCallback(const Eis::ClientInfo& info)
 {
 	static ClientId globalIdIncrementor = 0;
-
 	if (ServerLayer::GetClients().size() == 0) globalIdIncrementor = 0;
 
 	NetClient c(globalIdIncrementor++, info.Id);
 
-	EIS_INFO("{0} connected ({1})", c.GetClientId(), info.ConnectionDescription);
-
 	// Inform everyone
-	UpdatePacket m(UpdateType::CONNECT, c.GetClientId(), nullptr, 0);
-	ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(m), info.Id);
-
-	if (ServerLayer::GetClients().size() > 0)
 	{
-		InitialPacket::PlayerData* data = (InitialPacket::PlayerData*)_malloca(ServerLayer::GetClients().size() * sizeof(InitialPacket::PlayerData));
-		for (uint32_t i = 0; i < ServerLayer::GetClients().size(); i++)
-			data[i] = { ServerLayer::GetClients()[i].GetClientId(), ServerLayer::GetClients()[i].GetPos() };
-		InitialPacket packet(ServerLayer::GetClients().size(), data);
-		_freea(data);
-		ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitialPacket::CreateBuffer(packet));
+		EIS_INFO("{0} connected ({1})", c.GetClientId(), info.ConnectionDescription); // local included
+		UpdatePacket packet(UpdateType::CONNECT, c.GetClientId(), nullptr, 0);
+		ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(packet), info.Id);
 	}
-	else
-		ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitialPacket::CreateBuffer(InitialPacket(0, nullptr)));
+
+	// Send active players
+	{
+		if (ServerLayer::GetClients().size() > 0)
+		{
+			InitPlayersPacket::PlayerData* data = (InitPlayersPacket::PlayerData*)_malloca(ServerLayer::GetClients().size() * sizeof(InitPlayersPacket::PlayerData));
+			for (uint32_t i = 0; i < ServerLayer::GetClients().size(); i++)
+				data[i] = { ServerLayer::GetClients()[i].GetClientId(), ServerLayer::GetClients()[i].GetPos() };
+			InitPlayersPacket packet(ServerLayer::GetClients().size(), data);
+			_freea(data);
+			ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitPlayersPacket::CreateBuffer(packet));
+		}
+		else
+			ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitPlayersPacket::CreateBuffer(InitPlayersPacket(0, nullptr)));
+	}
+
+	// Send terrain data
+	{
+		uint32_t nr = ServerLayer::Get().m_TerrainManager.GetInitialIslandsNrToSend();
+		Island* data = ServerLayer::Get().m_TerrainManager.GetInitialIslandsToSend();
+		InitTerrainPacket packet(nr, data);
+		ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitTerrainPacket::CreateBuffer(packet));
+	}
 
 	ServerLayer::GetClients().push_back(c);
 }
@@ -52,7 +63,12 @@ void ServerLayer::DataRecievedCallback(const Eis::ClientInfo& info, Eis::Buffer&
 		EIS_ASSERT(false, "Invalid message recieved! (PacketType::NONE)");
 		break;
 
-	case PacketType::PLAYER_UPDATE:
+	case PacketType::INIT_PLAYERS:
+	case PacketType::INIT_TERRAIN:
+		EIS_ASSERT(false, "Invalid message received! (PacketType recieved is sent by server only)");
+		break;
+
+	case PacketType::UPDATE:
 	{
 		UpdatePacket& updateMsg = *((UpdatePacket*)buf.Data()); // HACK: ???
 
@@ -64,20 +80,34 @@ void ServerLayer::DataRecievedCallback(const Eis::ClientInfo& info, Eis::Buffer&
 
 		case UpdateType::CONNECT:
 		case UpdateType::DISCONNECT:
+		case UpdateType::TERRAIN:
 			// Only the server should send these messages
-			EIS_ASSERT(false, "Invalid message received! (UpdatePacket - UpdateType::CONNECT/DISCONNECT)");
+			EIS_ASSERT(false, "Invalid message received! (UpdatePacketType recieved is sent by server only)");
 			break;
 
 		case UpdateType::MOVEMENT:
 		{
+			// Update pos
 			NetClient& client = ServerLayer::GetClientByNetId(info.Id);
-			client.SetPos(*((glm::vec2*)((uint8_t*)buf.Data() + sizeof(UpdatePacket)))); // HACK: ???
-			UpdatePacket m(
+			glm::vec2 newPos = *((glm::vec2*)((uint8_t*)buf.Data() + sizeof(UpdatePacket))); // HACK: ???
+			client.SetPos(newPos);
+			EIS_TRACE("{0} {1}", client.GetPos().x, client.GetPos().y);
+			UpdatePacket movementPacket(
 				UpdateType::MOVEMENT,
 				client.GetClientId(),
-				&client.GetPos(),
+				&newPos,
 				sizeof(glm::vec2));
-			ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(m), info.Id);
+			ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(movementPacket), info.Id);
+
+			// Update and send terrain data
+		/*	uint32_t count = 0;
+			Island* data = ServerLayer::Get().m_TerrainManager.GenerateNewIslands(client.GetPos(), count);
+
+			if (count == 0) break;
+
+			UpdatePacket terrainPacket(UpdateType::TERRAIN, 0, data, count * sizeof(Island));
+			ServerLayer::Get().m_Server.SendBufferToClient(info.Id, UpdatePacket::CreateBuffer(terrainPacket));
+			delete[] data;*/
 		}
 		}
 		break;

@@ -5,6 +5,7 @@
 #include <imgui.h>
 
 #include "Game/LocalPlayer.h"
+#include "Game/Terrain.h"
 #include "Networking/NetworkPlayer.h"
 
 
@@ -40,6 +41,8 @@ private:
 
 	std::vector<NetPlayer> m_NetworkPlayers;
 
+	Terrain m_Terrain;
+
 	bool m_PauseOpen;
 	bool m_PerformanceOpen;
 
@@ -51,5 +54,5 @@ private:
 private:
 	static GameLayer* s_Instance;
 
-	const ImGuiWindowFlags commonFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar;
+	const ImGuiWindowFlags m_CommonFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar;
 };

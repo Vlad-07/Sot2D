@@ -1,16 +1,16 @@
 #pragma once
 
 #include <Eis/Core/Buffer.h>
-
+#include "../../Sot2D_client/src/Game/Island.h" // HACK
 
 enum class PacketType : uint8_t
 {
-	NONE = 0, INITIAL, PLAYER_UPDATE
+	NONE = 0, INIT_PLAYERS, INIT_TERRAIN, UPDATE
 };
 
 enum class UpdateType : uint8_t
 {
-	NONE = 0, MOVEMENT, CONNECT, DISCONNECT
+	NONE = 0, MOVEMENT, CONNECT, DISCONNECT, TERRAIN
 };
 
 
@@ -31,7 +31,7 @@ private:
 };
 
 
-class InitialPacket : public Packet
+class InitPlayersPacket : public Packet
 {
 public:
 	struct PlayerData
@@ -41,54 +41,62 @@ public:
 	};
 
 public:
-	InitialPacket(uint32_t playerCount, const PlayerData* data) : Packet(PacketType::INITIAL), m_PlayerCount(playerCount), m_Data(nullptr)
-	{
-		if (playerCount == 0) return;
-
-		EIS_ASSERT(data, "Invalid id array provided!");
-		m_Data = new PlayerData[playerCount];
-		memcpy(m_Data, data, playerCount * sizeof(PlayerData));
-	}
-	~InitialPacket()
-	{
-		delete[] m_Data;
-	}
+	InitPlayersPacket(uint32_t playerCount, PlayerData* data)
+		: Packet(PacketType::INIT_PLAYERS), m_PlayerCount(playerCount), m_PlayerData(data) {}
+	~InitPlayersPacket() = default;
 
 	uint32_t GetPlayerCount() const { return m_PlayerCount; }
 
-	static Eis::Buffer CreateBuffer(const InitialPacket& m)
+	static Eis::Buffer CreateBuffer(const InitPlayersPacket& m)
 	{
 		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
-		b.Allocate(sizeof(InitialPacket));
-		b.Write(&m, sizeof(InitialPacket));
-		if (m.m_Data == nullptr)
+		b.Allocate(sizeof(InitPlayersPacket));
+		b.Write(&m, sizeof(InitPlayersPacket));
+		if (m.m_PlayerData == nullptr)
 			return b;
 		b.Resize(b.GetSize() + m.m_PlayerCount * sizeof(PlayerData));
-		b.Write(m.m_Data, m.m_PlayerCount * sizeof(PlayerData), sizeof(InitialPacket));
+		b.Write(m.m_PlayerData, m.m_PlayerCount * sizeof(PlayerData), sizeof(InitPlayersPacket));
 		return b;
 	}
 
 private:
 	uint32_t m_PlayerCount;
-	PlayerData* m_Data;
+	PlayerData* m_PlayerData;
 };
+
+class InitTerrainPacket : public Packet
+{
+public:
+	InitTerrainPacket(uint32_t islandCount, Island* data)
+		: Packet(PacketType::INIT_TERRAIN), m_IslandCount(islandCount), m_IslandData(data) {}
+	~InitTerrainPacket() = default;
+
+	uint32_t GetIslandCount() const { return m_IslandCount; }
+
+	static Eis::Buffer CreateBuffer(const InitTerrainPacket& m)
+	{
+		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
+		b.Allocate(sizeof(InitTerrainPacket));
+		b.Write(&m, sizeof(InitTerrainPacket));
+		if (m.m_IslandData == nullptr)
+			return b;
+		b.Resize(b.GetSize() + m.m_IslandCount * sizeof(Island));
+		b.Write(m.m_IslandData, m.m_IslandCount * sizeof(Island), sizeof(InitTerrainPacket));
+		return b;
+	}
+
+private:
+	uint32_t m_IslandCount;
+	Island* m_IslandData;
+};
+
 
 class UpdatePacket : public Packet
 {
 public:
-	UpdatePacket(UpdateType type, ClientId id, const void* data, uint32_t dataSize)
-		: Packet(PacketType::PLAYER_UPDATE), m_UpdateType(type), m_Id(id), m_Data(nullptr), m_DataSize(dataSize)
-	{
-		if (dataSize == 0) return;
-
-		EIS_ASSERT(data, "Invalid data provided!");
-		m_Data = new uint8_t[dataSize];
-		memcpy(m_Data, data, dataSize);
-	}
-	~UpdatePacket()
-	{
-		delete[] m_Data;
-	}
+	UpdatePacket(UpdateType type, ClientId id, void* data, uint32_t dataSize)
+		: Packet(PacketType::UPDATE), m_UpdateType(type), m_Id(id), m_Data(data), m_DataSize(dataSize) {}
+	~UpdatePacket() = default;
 
 	UpdateType GetUpdateType() const { return m_UpdateType; }
 	ClientId GetClientId() const { return m_Id; }

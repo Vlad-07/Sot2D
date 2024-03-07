@@ -6,7 +6,7 @@
 
 #include "Network/NetClient.h"
 
-#include "../../Sot2D_client/src/Game/Terrain.h" // HACK
+#include "Game/TerrainManager.h"
 
 
 class ServerLayer : public Eis::Layer
@@ -35,10 +35,10 @@ private:
 private:
 	Eis::Server m_Server;
 	std::vector<NetClient> m_Clients;
-	Terrain m_Terrain;
+	TerrainManager m_TerrainManager;
 
 private:
 	static ServerLayer* s_Instance;
 
-	const ImGuiWindowFlags commonFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar;
+	const ImGuiWindowFlags m_CommonFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar;
 };
