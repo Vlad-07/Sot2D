@@ -1,7 +1,18 @@
 #pragma once
 
+#include <array>
 #include <glm/glm.hpp>
+#include <Eis.h>
 
+
+enum class Tile : uint8_t
+{
+	NONE = 0, PENDING, WATER, DOCK, SAND, GRASS, FOREST, BUILDING
+};
+
+static constexpr float c_TileSize = 2.0f;
+static constexpr int c_MaxTilemapSize = 102;
+typedef std::array<std::array<Tile, c_MaxTilemapSize>, c_MaxTilemapSize> Tilemap;
 
 class Island
 {
@@ -19,13 +30,16 @@ public:
 	};
 
 public:
-	Island() : m_CenterPos(0), m_Props({ Type::NONE, Size::NONE }), m_Col(0), m_Radius(0.0f) {}
+	Island() : m_CenterPos(0), m_Props({ Type::NONE, Size::NONE }), m_Inited(false), m_UsefulSurface(0), m_Tilemap() {}
 	Island(const glm::vec2& pos, const Props& props = GetRandomProps());
 	Island(const Island& i);
 	Island(const Island&& i) noexcept;
 	~Island() = default;
 
+	// Server only:
 	void Init();
+
+	// Client only:
 	void Render() const;
 
 	glm::vec2 GetCenterPos() const { return m_CenterPos; }
@@ -37,9 +51,15 @@ public:
 	static Props GetRandomProps();
 
 private:
+	static void CreateIslandTilemap(Island& island);
+
+private:
 	glm::vec2 m_CenterPos;
 	Props m_Props;
+	bool m_Inited;
 
-	glm::vec4 m_Col; // temp for debugging terrain generation system
-	float m_Radius;
+	Tilemap m_Tilemap;
+	uint32_t m_UsefulSurface;
+
+	Eis::Ref<Eis::Texture2D> m_Ground;
 };

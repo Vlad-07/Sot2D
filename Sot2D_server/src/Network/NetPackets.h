@@ -5,7 +5,7 @@
 
 enum class PacketType : uint8_t
 {
-	NONE = 0, INIT_PLAYERS, INIT_TERRAIN, UPDATE
+	NONE = 0, INIT_PLAYERS, /*INIT_TERRAIN,*/ UPDATE
 };
 
 enum class UpdateType : uint8_t
@@ -63,7 +63,7 @@ private:
 	uint32_t m_PlayerCount;
 	PlayerData* m_PlayerData;
 };
-
+/*
 class InitTerrainPacket : public Packet
 {
 public:
@@ -81,14 +81,14 @@ public:
 		if (m.m_IslandData == nullptr)
 			return b;
 		b.Resize(b.GetSize() + m.m_IslandCount * sizeof(Island));
-		b.Write(m.m_IslandData, m.m_IslandCount * sizeof(Island), sizeof(InitTerrainPacket));
+		b.Write(m.m_IslandData, m.m_IslandCount  * sizeof(Island), sizeof(InitTerrainPacket));
 		return b;
 	}
 
 private:
 	uint32_t m_IslandCount;
 	Island* m_IslandData;
-};
+};//*/
 
 
 class UpdatePacket : public Packet

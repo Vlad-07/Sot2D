@@ -15,12 +15,17 @@ public:
 	Terrain() = default;
 	~Terrain() = default;
 
+	// Add and init island
 	void AddIsland(const Island& island);
+	void Clear() { m_Islands.clear(); }
+	void Reserve(uint32_t islandCount) { m_Islands.reserve(islandCount); }
+
 	void UnloadFarIslands(const glm::vec2& playerPos);
 
 	void RenderIslands(const glm::vec2& playerPos);
 
-	void Clear() { m_Islands.clear(); }
+public:
+	std::mutex m_TerrainMtx;
 
 private:
 	std::vector<Island> m_Islands;

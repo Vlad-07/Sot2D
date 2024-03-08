@@ -73,7 +73,7 @@ void ServerLayer::OnImGuiRender()
 		for (const NetClient& c : m_Clients)
 			ImGui::Text("%i ", c.GetClientId());
 		if (ImGui::Button("Stop"))
-			m_Server.Stop(), m_Clients.clear();
+			m_Server.Stop(), m_Clients.clear(), m_TerrainManager.Clear();
 	}
 
 	ImGui::Text("");
@@ -85,6 +85,8 @@ void ServerLayer::OnImGuiRender()
 
 NetClient& ServerLayer::GetClientByNetId(Eis::ClientID netId)
 {
+	EIS_PROFILE_FUNCTION();
+
 	for (uint32_t i = 0; i < ServerLayer::GetClients().size(); i++)
 	{
 		if (ServerLayer::GetClients()[i].GetNetworkId() == netId)
@@ -93,9 +95,10 @@ NetClient& ServerLayer::GetClientByNetId(Eis::ClientID netId)
 	EIS_ASSERT(false, "Could not find client by NetworkID!");
 	return NetClient(0, 0);
 }
-
 std::vector<NetClient>::iterator ServerLayer::FindClientByNetId(Eis::ClientID netId)
 {
+	EIS_PROFILE_FUNCTION();
+
 	for (uint32_t i = 0; i < ServerLayer::GetClients().size(); i++)
 	{
 		if (ServerLayer::GetClients()[i].GetNetworkId() == netId)

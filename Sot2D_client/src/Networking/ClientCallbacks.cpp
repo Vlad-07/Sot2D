@@ -12,7 +12,9 @@ void GameLayer::DisconnectedCallback()
 
 void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 {
-	Packet& packet = *((Packet*)buf.Data()); // HACK: ???
+	EIS_PROFILE_FUNCTION();
+
+	Packet& packet = buf.Read<Packet>();
 	switch (packet.GetType())
 	{
 	case PacketType::NONE:
@@ -23,10 +25,10 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 	{
 		GameLayer::Get().InitSession();
 
-		InitPlayersPacket& initPlayersPacket = *((InitPlayersPacket*)buf.Data()); // HACK: ???
+		InitPlayersPacket& initPlayersPacket = buf.Read<InitPlayersPacket>();
 		for (uint32_t i = 0; i < initPlayersPacket.GetPlayerCount(); i++)
 		{
-			InitPlayersPacket::PlayerData pData = ((InitPlayersPacket::PlayerData*)((uint8_t*)buf.Data() + sizeof(InitPlayersPacket)))[i]; // HACK: ???
+			InitPlayersPacket::PlayerData pData = buf.Read<InitPlayersPacket::PlayerData>(sizeof(InitPlayersPacket) + i * sizeof(InitPlayersPacket::PlayerData));
 			NetPlayer p(pData.id, pData.pos);
 			p.LoadTexture();
 			GameLayer::GetNetworkPlayers().push_back(p);
@@ -34,23 +36,22 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 		}
 		break;
 	}
-
+	/*
 	case PacketType::INIT_TERRAIN:
 	{
-		InitTerrainPacket& initTerrainPacket = *((InitTerrainPacket*)buf.Data()); // HACK: ???
-		Island* islands = ((Island*)((uint8_t*)buf.Data() + sizeof(InitTerrainPacket)));
+		InitTerrainPacket& initTerrainPacket = buf.Read<InitTerrainPacket>();
 		for (uint32_t i = 0; i < initTerrainPacket.GetIslandCount(); i++)
 		{
-			Island is = islands[i];
+			Island is = *(Island*)((uint8_t*)buf.Data() + (sizeof(InitTerrainPacket) + i * sizeof(Island)));
 			is.Init();
 			GameLayer::Get().m_Terrain.AddIsland(is);
 		}
 		break;
-	}
+	}//*/
 
 	case PacketType::UPDATE:
 	{
-		UpdatePacket& updatePacket = *((UpdatePacket*)buf.Data()); // HACK: ???
+		UpdatePacket& updatePacket = buf.Read<UpdatePacket>();
 		switch (updatePacket.GetUpdateType())
 		{
 		case UpdateType::NONE:
@@ -72,21 +73,20 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 		case UpdateType::MOVEMENT:
 		{
 			GameLayer::Get().GetClientById(updatePacket.GetClientId()).SetActualPos(
-				*((glm::vec2*)((uint8_t*)buf.Data() + sizeof(UpdatePacket))) // HACK: ???
+				buf.Read<glm::vec2>(sizeof(UpdatePacket))
 			);
 			break;
 		}
 
 		case UpdateType::TERRAIN:
 		{
-			uint32_t count = updatePacket.GetDataSize() / sizeof(Island);
-			for (uint32_t i = 0; i < count; i++)
-			{
-				Island is = ((Island*)((uint8_t*)buf.Data() + sizeof(UpdatePacket)))[i]; // HACK: ???
-				is.Init();
-				GameLayer::Get().m_Terrain.AddIsland(is);
-			}
+			GameLayer::Get().m_Terrain.m_TerrainMtx.lock();
+			if (updatePacket.GetClientId())
+				GameLayer::Get().m_Terrain.Reserve(updatePacket.GetClientId());
 
+			Island is = buf.Read<Island>(sizeof(UpdatePacket));
+			GameLayer::Get().m_Terrain.AddIsland(is);
+			GameLayer::Get().m_Terrain.m_TerrainMtx.unlock();
 			break;
 		}
 		}

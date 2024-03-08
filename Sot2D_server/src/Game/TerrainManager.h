@@ -19,9 +19,10 @@ public:
 	~TerrainManager() = default;
 
 	void InitStartingArea();
+	void Clear();
 
 	uint32_t GetInitialIslandsNrToSend();
-	Island* GetInitialIslandsToSend();
+	std::vector<Island>& GetInitialIslandsToSend();
 
 private:
 	std::vector<Island> m_Islands;

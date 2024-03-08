@@ -5,16 +5,16 @@
 LocalPlayer* LocalPlayer::s_Instance = nullptr;
 
 
-LocalPlayer::LocalPlayer() : Player(), m_CameraController(16.0f / 9.0f), m_OldPos(m_Pos), m_ActualRotation(0.0f)
+LocalPlayer::LocalPlayer() : Player(), m_CameraController(16.0f / 9.0f), m_OldPos(m_Pos), m_ActualRotation(0.0f), m_Running(false)
 {
 	EIS_ASSERT(!s_Instance, "Local player already exists!");
 
 	LoadTexture();
 
+	m_CameraController.SetZoomSpeedEffect(false);
 	m_CameraController.SetMinZoom(2.0f);
 	m_CameraController.SetMaxZoom(6.0f);
-	m_CameraController.SetZoomSpeedEffect(false);
-	m_CameraController.SetCameraSpeed(5.0f);
+	m_CameraController.SetCameraSpeed(c_WalkSpeed);
 }
 LocalPlayer::~LocalPlayer()
 {
@@ -25,7 +25,7 @@ void LocalPlayer::Init()
 {
 	m_OldPos = m_Pos = glm::vec2(0);
 	m_CameraController.SetPosition(glm::vec3(0));
-	m_CameraController.SetCameraSpeed(5.0f);
+	m_CameraController.SetCameraSpeed(c_WalkSpeed);
 	m_CameraController.SetMinZoom(2.0f);
 	m_CameraController.SetMaxZoom(6.0f);
 	m_CameraController.SetZoom(2.0f);

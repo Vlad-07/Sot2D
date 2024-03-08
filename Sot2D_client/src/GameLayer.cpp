@@ -7,7 +7,7 @@
 GameLayer* GameLayer::s_Instance = nullptr;
 
 
-GameLayer::GameLayer() : Layer("GameLayer"), m_LocalPlayer(), m_PauseOpen(false), m_PerformanceOpen(false), m_DeltaTime(), m_Terrain()
+GameLayer::GameLayer() : Layer("GameLayer"), m_LocalPlayer(), m_PauseOpen(false), m_PerformanceOpen(false), m_GodMode(false), m_DeltaTime(), m_Terrain()
 {
 	EIS_ASSERT(!s_Instance, "Layer already exists!");
 	s_Instance = this;
@@ -135,9 +135,19 @@ void GameLayer::OnImGuiRender()
 			ImGui::Text("%.0f FPS (%.1f ms)", 1.0f / m_DeltaTime, m_DeltaTime.GetMilliseconds());
 			if (ImGui::Button("God mode"))
 			{
-				m_LocalPlayer.GetCameraController().SetMaxZoom(1000.0f);
-				m_LocalPlayer.GetCameraController().SetZoom(1000.0f);
-				m_LocalPlayer.GetCameraController().SetCameraSpeed(200.0f);
+				m_GodMode = !m_GodMode;
+				if (m_GodMode) // enable
+				{
+					m_LocalPlayer.GetCameraController().SetMaxZoom(1000.0f);
+					m_LocalPlayer.GetCameraController().SetZoom(500.0f);
+					m_LocalPlayer.GetCameraController().SetCameraSpeed(200.0f);
+				}
+				else // disable
+				{
+					m_LocalPlayer.GetCameraController().SetCameraSpeed(5.0f);
+					m_LocalPlayer.GetCameraController().SetZoom(2.0f);
+					m_LocalPlayer.GetCameraController().SetMaxZoom(6.0f);
+				}
 			}
 			ImGui::End();
 		}
@@ -166,6 +176,20 @@ void GameLayer::OnEvent(Eis::Event& e)
 			m_PerformanceOpen = !m_PerformanceOpen;
 			return true;
 		}
+		if (e.GetKeyCode() == EIS_KEY_LEFT_SHIFT)
+		{
+			m_LocalPlayer.SetRunning(true);
+			return true;
+		}
+		return false;
+	});
+	d.Dispatch<Eis::KeyReleasedEvent>([this](Eis::KeyReleasedEvent e) -> bool
+	{
+		if (e.GetKeyCode() == EIS_KEY_LEFT_SHIFT)
+		{
+			m_LocalPlayer.SetRunning(false);
+			return true;
+		}
 		return false;
 	});
 }
@@ -173,6 +197,8 @@ void GameLayer::OnEvent(Eis::Event& e)
 
 void GameLayer::InitSession()
 {
+	EIS_PROFILE_FUNCTION();
+
 	m_LocalPlayer.Init();
 	m_NetworkPlayers.clear();
 	m_Terrain.Clear();
@@ -182,6 +208,8 @@ void GameLayer::InitSession()
 
 NetPlayer& GameLayer::GetClientById(ClientId id)
 {
+	EIS_PROFILE_FUNCTION();
+
 	for (uint32_t i = 0; i < GameLayer::GetNetworkPlayers().size(); i++)
 	{
 		if (GameLayer::GetNetworkPlayers()[i].GetId() == id)
@@ -192,6 +220,8 @@ NetPlayer& GameLayer::GetClientById(ClientId id)
 }
 std::vector<NetPlayer>::iterator GameLayer::FindClientById(ClientId id)
 {
+	EIS_PROFILE_FUNCTION();
+
 	for (uint32_t i = 0; i < GameLayer::GetNetworkPlayers().size(); i++)
 	{
 		if (GameLayer::GetNetworkPlayers()[i].GetId() == id)

@@ -6,6 +6,7 @@
 void Terrain::AddIsland(const Island& island)
 {
 	m_Islands.push_back(island);
+	m_Islands.back().Init();
 }
 
 void Terrain::UnloadFarIslands(const glm::vec2& playerPos)
@@ -20,9 +21,15 @@ void Terrain::UnloadFarIslands(const glm::vec2& playerPos)
 
 void Terrain::RenderIslands(const glm::vec2& playerPos)
 {
-	for (const Island& i : m_Islands)
+	if (m_Islands.size() < m_Islands.capacity())
+		return;
+	if (!m_TerrainMtx.try_lock())
+		return;
+
+	for (uint32_t i = 0; i < m_Islands.size(); i++)
 	{
-	//	if (glm::distance(playerPos, i.GetCenterPos()) < c_RenderDistance)
-			i.Render();
+		if (glm::distance(playerPos, m_Islands[i].GetCenterPos()) < c_RenderDistance)
+			m_Islands[i].Render();
 	}
+	m_TerrainMtx.unlock();
 }

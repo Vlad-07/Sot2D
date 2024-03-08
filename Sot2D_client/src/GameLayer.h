@@ -9,6 +9,9 @@
 #include "Networking/NetworkPlayer.h"
 
 
+// TODO: net player rotation
+// BUG: glitchy local player pos
+
 class GameLayer : public Eis::Layer
 {
 public:
@@ -45,6 +48,7 @@ private:
 
 	bool m_PauseOpen;
 	bool m_PerformanceOpen;
+	bool m_GodMode;
 
 	Eis::Ref<Eis::Texture2D> m_Map,
 							 m_NetPlayerTex; // HACK: NetPlayer textures are buggy

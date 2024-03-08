@@ -8,13 +8,16 @@
 
 void TerrainManager::InitStartingArea()
 {
-	m_Islands.clear();
+	EIS_PROFILE_FUNCTION();
 
-	Island startIsland(glm::vec2(0.0f), { Island::Type::OUTPOST, Island::Size::MEDIUM });
+	m_Islands.clear();
+	m_Islands.reserve(50);
+
+	Island startIsland(glm::vec2(0.0f), { Island::Type::OUTPOST, Island::Size::HUGE });
 	startIsland.Init();
 	m_Islands.push_back(startIsland);
 
-	for (uint32_t i = 0; i < 100; i++)
+	for (uint32_t i = 0; i < 49; i++)
 	{
 		glm::vec2 pos;
 		_RETRY:
@@ -28,19 +31,26 @@ void TerrainManager::InitStartingArea()
 	}
 }
 
+void TerrainManager::Clear()
+{
+	m_Islands.clear();
+}
+
 uint32_t TerrainManager::GetInitialIslandsNrToSend()
 {
 	return m_Islands.size();
 }
 
-Island* TerrainManager::GetInitialIslandsToSend()
+std::vector<Island>& TerrainManager::GetInitialIslandsToSend()
 {
-	return m_Islands.data();
+	return m_Islands;
 }
 
 
 float TerrainManager::DistToNearestIsland(const glm::vec2& pos)
 {
+	EIS_PROFILE_FUNCTION();
+
 	float minDistance = std::numeric_limits<float>::max();
 	for (const Island& i : m_Islands)
 	{
