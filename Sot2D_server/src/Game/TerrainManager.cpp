@@ -13,7 +13,7 @@ void TerrainManager::InitStartingArea()
 	m_Islands.clear();
 	m_Islands.reserve(50);
 
-	Island startIsland(glm::vec2(0.0f), { Island::Type::OUTPOST, Island::Size::HUGE });
+	Island startIsland(glm::vec2(0.0f), { Island::Type::OUTPOST, Island::Size::MEDIUM });
 	startIsland.Init();
 	m_Islands.push_back(startIsland);
 
@@ -38,7 +38,7 @@ void TerrainManager::Clear()
 
 uint32_t TerrainManager::GetInitialIslandsNrToSend()
 {
-	return m_Islands.size();
+	return (uint32_t)m_Islands.size();
 }
 
 std::vector<Island>& TerrainManager::GetInitialIslandsToSend()

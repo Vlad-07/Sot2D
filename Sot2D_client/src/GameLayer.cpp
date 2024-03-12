@@ -46,7 +46,6 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	EIS_PROFILE_FUNCTION();
 
 	Eis::Renderer2D::Clear();
-	
 
 	// Check in-game status
 	if (m_Client.GetConnectionStatus() != Eis::Client::Connected)
@@ -139,7 +138,7 @@ void GameLayer::OnImGuiRender()
 				if (m_GodMode) // enable
 				{
 					m_LocalPlayer.GetCameraController().SetMaxZoom(1000.0f);
-					m_LocalPlayer.GetCameraController().SetZoom(500.0f);
+					m_LocalPlayer.GetCameraController().SetZoom(100.0f);
 					m_LocalPlayer.GetCameraController().SetCameraSpeed(200.0f);
 				}
 				else // disable
@@ -216,7 +215,7 @@ NetPlayer& GameLayer::GetClientById(ClientId id)
 			return GameLayer::GetNetworkPlayers()[i];
 	}
 	EIS_ASSERT(false, "Could not find client by NetworkID!");
-	return NetPlayer(-1);
+	throw;
 }
 std::vector<NetPlayer>::iterator GameLayer::FindClientById(ClientId id)
 {

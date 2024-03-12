@@ -7,11 +7,11 @@
 
 enum class Tile : uint8_t
 {
-	NONE = 0, PENDING, WATER, DOCK, SAND, GRASS, FOREST, BUILDING
+	NONE = 0, PENDING, WATER, SAND, GRASS
 };
 
 static constexpr float c_TileSize = 2.0f;
-static constexpr int c_MaxTilemapSize = 102;
+static constexpr int c_MaxTilemapSize = 101;
 typedef std::array<std::array<Tile, c_MaxTilemapSize>, c_MaxTilemapSize> Tilemap;
 
 class Island

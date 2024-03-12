@@ -93,7 +93,7 @@ NetClient& ServerLayer::GetClientByNetId(Eis::ClientID netId)
 			return ServerLayer::GetClients()[i];
 	}
 	EIS_ASSERT(false, "Could not find client by NetworkID!");
-	return NetClient(0, 0);
+	throw;
 }
 std::vector<NetClient>::iterator ServerLayer::FindClientByNetId(Eis::ClientID netId)
 {

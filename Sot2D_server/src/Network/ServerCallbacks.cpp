@@ -25,7 +25,7 @@ void ServerLayer::ClientConnectedCallback(const Eis::ClientInfo& info)
 			InitPlayersPacket::PlayerData* data = (InitPlayersPacket::PlayerData*)_malloca(ServerLayer::GetClients().size() * sizeof(InitPlayersPacket::PlayerData));
 			for (uint32_t i = 0; i < ServerLayer::GetClients().size(); i++)
 				data[i] = { ServerLayer::GetClients()[i].GetClientId(), ServerLayer::GetClients()[i].GetPos() };
-			InitPlayersPacket packet(ServerLayer::GetClients().size(), data);
+			InitPlayersPacket packet((uint32_t)ServerLayer::GetClients().size(), data);
 			_freea(data);
 			ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitPlayersPacket::CreateBuffer(packet));
 		}

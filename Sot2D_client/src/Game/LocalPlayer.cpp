@@ -36,10 +36,10 @@ void LocalPlayer::OnUpdate(Eis::TimeStep ts)
 	m_CameraController.OnUpdate(ts);
 	SetPos(m_CameraController.GetCamera().GetPosition());
 
-	if (fabs(m_ActualRotation - m_Rotation) > 3.0f * PI / 2.0f) // fix going from -pi to pi/2
+	if (fabs(m_ActualRotation - m_Rotation) > 3.0f * PI / 2.1f) // fix going from -pi to pi/2
 		m_Rotation += 2 * PI * (m_ActualRotation - m_Rotation > 0.0f ? 1.0f : -1.0f);
 
-	m_Rotation += (m_ActualRotation - m_Rotation) * 0.3f; // interpolate rotation
+	m_Rotation += (m_ActualRotation - m_Rotation) * 15.0f * ts; // interpolate rotation
 }
 
 void LocalPlayer::SetPos(const glm::vec2& pos)
