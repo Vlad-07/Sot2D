@@ -88,10 +88,11 @@ void Island::Render() const
 		{
 		case Tile::NONE: break;
 		case Tile::WATER: color = glm::vec4(0, 0, 1, 1); break;
+		case Tile::OCEAN: color = glm::vec4(0, 0, 0.5f, 1); continue;
 		case Tile::SAND: color = glm::vec4(1, 1, 0, 1); break;
 		case Tile::GRASS: color = glm::vec4(0, 1, 0, 1); break;
 		}
-		Eis::Renderer2D::DrawQuad(m_CenterPos + glm::vec2((float)xOff, (float)yOff) * c_TileSize - glm::vec2(m_UsefulSurface / 2.0f), glm::vec2(c_TileSize), color);
+		Eis::Renderer2D::DrawQuad(m_CenterPos + glm::vec2((float)xOff, (float)yOff) * c_TileSize - glm::vec2((m_UsefulSurface + 1) / 2.0f), glm::vec2(c_TileSize), color);
 	}
 }
 
@@ -132,11 +133,13 @@ Island::Props Island::GetRandomProps()
 }
 
 
+
+static int dx[]{ -1, -1, -1,  0,  1, 1, 1, 0 },
+		   dy[]{ 1,  0, -1, -1, -1, 0, 1, 1 };
+
 void Island::CreateIslandTilemap(Island& island)
 {
 	EIS_PROFILE_FUNCTION();
-
-	EIS_ASSERT(island.m_UsefulSurface % 2 == 1, "Islands must have a center tile!");
 
 	switch (island.m_Props.size)
 	{
@@ -145,6 +148,8 @@ void Island::CreateIslandTilemap(Island& island)
 	case Island::Size::BIG: island.m_UsefulSurface = 55; break;
 	case Island::Size::HUGE: island.m_UsefulSurface = c_MaxTilemapSize; break;
 	}
+
+	EIS_ASSERT(island.m_UsefulSurface % 2 == 1, "Islands must have a center tile!");
 
 	bool spawnBuildings;
 	switch (island.m_Props.type)
@@ -159,68 +164,80 @@ void Island::CreateIslandTilemap(Island& island)
 			island.m_Tilemap[0][k] = island.m_Tilemap[island.m_UsefulSurface - 1][k] = Tile::WATER;
 	}
 
+
 	std::queue<glm::uvec2> q;
 	q.push(glm::uvec2((island.m_UsefulSurface + 1) / 2, (island.m_UsefulSurface + 1) / 2));
 	while (!q.empty())
 	{
-		static int dx[]{ -1, -1, -1,  0,  1, 1, 1, 0 },
-				   dy[]{  1,  0, -1, -1, -1, 0, 1, 1 };
 		glm::uvec2& pos = q.front();
 
-		static std::vector<Tile> invalidTiles;
+	//	static std::vector<Tile> invalidTiles;
 
 		// neighbout stuff
 		for (int k = 0; k < 8; k++)
 		{
 			glm::uvec2 neighbour(pos.x + dx[k], pos.y + dy[k]);
-			if (neighbour.x >= 0 && neighbour.x < island.m_UsefulSurface
-				&& neighbour.y >= 0 && neighbour.y < island.m_UsefulSurface)
+
+			if (neighbour.x >= island.m_UsefulSurface || neighbour.y >= island.m_UsefulSurface)
+				continue;
+
+			if (island.m_Tilemap[neighbour.y][neighbour.x] == Tile::NONE)
 			{
-				if (island.m_Tilemap[neighbour.y][neighbour.x] == Tile::NONE)
-				{
-					island.m_Tilemap[neighbour.y][neighbour.x] = Tile::PENDING;
-					q.push(neighbour);
-				}
-				else // limit current tile
-				{
-				}
+				island.m_Tilemap[neighbour.y][neighbour.x] = Tile::PENDING;
+				q.push(neighbour);
+			}
+			else // limit current tile
+			{
 			}
 		}
 
-	_RETRY:
-		island.m_Tilemap[pos.y][pos.x] = (Tile)Eis::Random::UInt(3, 4);
+//	_RETRY:
 		float distToCenter = ((pos.x - (island.m_UsefulSurface + 1) / 2.0f) * (pos.x - (island.m_UsefulSurface + 1) / 2.0f)
 							+ (pos.y - (island.m_UsefulSurface + 1) / 2.0f) * (pos.y - (island.m_UsefulSurface + 1) / 2.0f)) / (island.m_UsefulSurface * island.m_UsefulSurface / 4);
-
-		if (std::powf(distToCenter, 10) > Eis::Random::Float())
+		distToCenter += Eis::Random::Float(-0.1f, 0.1f);
+		if (distToCenter < 0.3f)
+			island.m_Tilemap[pos.y][pos.x] = Tile::GRASS;
+		else if (distToCenter < 0.7f)
+			island.m_Tilemap[pos.y][pos.x] = Tile::SAND;
+		else
 			island.m_Tilemap[pos.y][pos.x] = Tile::WATER;
 
 
-		for (const Tile& t : invalidTiles) if (island.m_Tilemap[pos.y][pos.x] == t) goto _RETRY;
+	//	for (const Tile& t : invalidTiles) if (island.m_Tilemap[pos.y][pos.x] == t) goto _RETRY;
 
 		q.pop();
-		invalidTiles.clear();
+	//	invalidTiles.clear();
 	}
 
-	for (uint32_t y = 1; y < island.m_UsefulSurface - 1; y++)
-	for (uint32_t x = 1; x < island.m_UsefulSurface - 1; x++)
+
+	// Process water
+	q.push(glm::uvec2(0, 0));
+	while (!q.empty())
 	{
-		if (island.m_Tilemap[y][x] != Tile::WATER)
-			continue;
+		glm::uvec2& pos = q.front();
 
-		int solidNeighbours = 0;
-
-		for (int xOff = -1; xOff <= 1; xOff++)
-		for (int yOff = -1; yOff <= 1; yOff++)
+		if (island.m_Tilemap[pos.y][pos.x] == Tile::OCEAN)
 		{
-			if (xOff == 0 && xOff == yOff)
-				continue;
-
-			if (island.m_Tilemap[y + yOff][x + xOff] != Tile::WATER)
-				solidNeighbours++;
+			q.pop();
+			continue;
 		}
 
-		if (solidNeighbours == 4)
-			island.m_Tilemap[y][x] = Tile::SAND;
+		if (island.m_Tilemap[pos.y][pos.x] == Tile::WATER)
+			island.m_Tilemap[pos.y][pos.x] = Tile::OCEAN;
+
+		for (int k = 0; k < 8; k++)
+		{
+			glm::uvec2 neighbour(pos.x + dx[k], pos.y + dy[k]);
+
+			if (neighbour.x >= island.m_UsefulSurface || neighbour.y >= island.m_UsefulSurface)
+				continue;
+
+			if (island.m_Tilemap[neighbour.y][neighbour.x] == Tile::WATER)
+				q.push(neighbour);
+		}
+
+		island.m_Tilemap[pos.y][pos.x] = Tile::OCEAN;
+
+		q.pop();
 	}
 }

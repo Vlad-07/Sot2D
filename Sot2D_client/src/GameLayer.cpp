@@ -71,7 +71,7 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	// Rendering
 	Eis::Renderer2D::BeginScene(m_LocalPlayer.GetCameraController().GetCamera());
 
-//	Eis::Renderer2D::DrawQuad(glm::vec3(0), glm::vec2(15), m_Map);
+	Eis::Renderer2D::DrawQuad(m_LocalPlayer.GetPos(), glm::vec2(160 * 3, 90 * 3), glm::vec4(0, 0, 0.5f, 1)); // ocean
 	m_Terrain.RenderIslands(m_LocalPlayer.GetPos());
 
 	for (const NetPlayer& p : m_NetworkPlayers)

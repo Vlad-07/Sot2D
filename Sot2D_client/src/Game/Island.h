@@ -7,7 +7,7 @@
 
 enum class Tile : uint8_t
 {
-	NONE = 0, PENDING, WATER, SAND, GRASS
+	NONE = 0, PENDING, OCEAN, WATER, SAND, GRASS
 };
 
 static constexpr float c_TileSize = 2.0f;
