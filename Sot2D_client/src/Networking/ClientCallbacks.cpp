@@ -36,18 +36,6 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 		}
 		break;
 	}
-	/*
-	case PacketType::INIT_TERRAIN:
-	{
-		InitTerrainPacket& initTerrainPacket = buf.Read<InitTerrainPacket>();
-		for (uint32_t i = 0; i < initTerrainPacket.GetIslandCount(); i++)
-		{
-			Island is = *(Island*)((uint8_t*)buf.Data() + (sizeof(InitTerrainPacket) + i * sizeof(Island)));
-			is.Init();
-			GameLayer::Get().m_Terrain.AddIsland(is);
-		}
-		break;
-	}//*/
 
 	case PacketType::UPDATE:
 	{

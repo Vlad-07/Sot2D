@@ -69,14 +69,20 @@ void ServerLayer::OnImGuiRender()
 	}
 	else // Running
 	{
-		ImGui::Text("%i clients connected", m_Clients.size());
-		for (const NetClient& c : m_Clients)
-			ImGui::Text("%i ", c.GetClientId());
 		if (ImGui::Button("Stop"))
 			m_Server.Stop(), m_Clients.clear(), m_TerrainManager.Clear();
+		ImGui::Text("%i clients connected", m_Clients.size());
+		for (uint32_t i = 0; i < m_Clients.size(); i++)
+		{
+			ImGui::Text("%i ", m_Clients[i].GetClientId());
+			ImGui::SameLine();
+			if (ImGui::Button("Kick"))
+			{
+				m_Server.KickClient(m_Clients[i].GetNetworkId());
+				m_Clients.erase(m_Clients.begin() + i);
+			}
+		}
 	}
-
-	ImGui::Text("");
 
 	ImGui::End();
 }

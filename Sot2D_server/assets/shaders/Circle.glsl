@@ -1,39 +1,48 @@
 #type vertex
-#version 330 core
+#version 450 core
 
-layout(location = 0) in vec3 a_Position;
-layout(location = 1) in vec2 a_TexCoord;
+layout(location = 0) in vec3 a_WorldPosition;
+layout(location = 1) in vec3 a_LocalPosition;
+layout(location = 2) in vec4 a_Color;
+layout(location = 3) in float a_Thickness;
+layout(location = 4) in float a_Fade;
 
 uniform mat4 u_VP;
-uniform mat4 u_Transform;
 
-out vec2 v_TexCoord;
+out vec3 v_LocalPosition;
+out vec4 v_Color;
+out float v_Thickness;
+out float v_Fade;
 
 void main()
 {
-	v_TexCoord = a_TexCoord;
-	gl_Position = u_VP * u_Transform * vec4(a_Position, 1.0);
+	v_LocalPosition = a_LocalPosition;
+	v_Color = a_Color;
+	v_Thickness = a_Thickness;
+	v_Fade = a_Fade;
+	gl_Position = u_VP * vec4(a_WorldPosition, 1.0);
 }
 
 
 #type fragment
-#version 330 core
+#version 450 core
 
-layout(location = 0) out vec4 color;
+layout(location = 0) out vec4 o_Color;
 
-in vec2 v_TexCoord;
-
-uniform vec4 u_Color;
-uniform float u_Fade;
-uniform float u_Thickness;
-uniform sampler2D u_Texture;
+in vec3 v_LocalPosition;
+in vec4 v_Color;
+in float v_Thickness;
+in float v_Fade;
 
 void main()
 {
-    float distance = 1.0 - length(v_TexCoord - vec2(0.5, 0.5)) * 2;
-    vec4 colorr = vec4(smoothstep(0.0, u_Fade, distance));
-    colorr *= vec4(smoothstep(u_Thickness + u_Fade, u_Thickness, distance));
-    
-    color = colorr;
-    color *= texture(u_Texture, v_TexCoord) * u_Color;
+	float distance = 1.0 - length(v_LocalPosition);
+	float circleAlpha = smoothstep(0.0, v_Fade, distance);
+	circleAlpha *= smoothstep(v_Thickness + v_Fade, v_Thickness, distance);
+
+	if (circleAlpha == 0.0)
+		discard;
+
+	o_Color = v_Color;
+	o_Color.a *= circleAlpha;
 }

@@ -45,13 +45,14 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 {
 	EIS_PROFILE_FUNCTION();
 
-	Eis::Renderer2D::Clear();
+	m_DeltaTime = ts;
 
 	// Check in-game status
 	if (m_Client.GetConnectionStatus() != Eis::Client::Connected)
+	{
+		Eis::Renderer2D::Clear();
 		return;
-
-	m_DeltaTime = ts;
+	}
 	
 	// Local update
 	m_LocalPlayer.OnUpdate(ts);
@@ -69,6 +70,8 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	}
 
 	// Rendering
+	Eis::Renderer2D::ResetStats();
+	Eis::Renderer2D::Clear();
 	Eis::Renderer2D::BeginScene(m_LocalPlayer.GetCameraController().GetCamera());
 
 	Eis::Renderer2D::DrawQuad(m_LocalPlayer.GetPos(), glm::vec2(160 * 3, 90 * 3), glm::vec4(0, 0, 0.5f, 1)); // ocean
@@ -102,6 +105,8 @@ void GameLayer::OnImGuiRender()
 			if (ImGui::InputText("##ip", ip, sizeof(ip), ImGuiInputTextFlags_EnterReturnsTrue)
 				|| ImGui::Button("Connect"))
 				m_Client.ConnectToServer(ip);
+			if (ImGui::Button("Quit"))
+				Eis::Application::ShouldClose();
 		}
 		else // Trying to connect...
 		{
@@ -109,8 +114,6 @@ void GameLayer::OnImGuiRender()
 			if (ImGui::Button("Cancel"))
 				m_Client.Disconnect();
 		}
-		if (ImGui::Button("Quit"))
-			Eis::Application::ShouldClose();
 
 		ImGui::End();
 	}
@@ -128,10 +131,14 @@ void GameLayer::OnImGuiRender()
 		if (m_PerformanceOpen) // Performance menu
 		{
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Appearing);
-			ImGui::SetNextWindowSize(ImVec2(130, 50), ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(ImVec2(130, 120), ImGuiCond_Appearing);
 			ImGui::SetNextWindowBgAlpha(0.1f);
 			ImGui::Begin("##PerformanceMenu", nullptr, m_CommonFlags | ImGuiWindowFlags_NoTitleBar);
 			ImGui::Text("%.0f FPS (%.1f ms)", 1.0f / m_DeltaTime, m_DeltaTime.GetMilliseconds());
+			ImGui::Text("Draw calls:   %i", Eis::Renderer2D::GetStats().DrawCalls);
+			ImGui::Text("Quad count:   %i", Eis::Renderer2D::GetStats().QuadCount);
+			ImGui::Text("Circle count: %i", Eis::Renderer2D::GetStats().CircleCount);
+			ImGui::Text("Line count:   %i", Eis::Renderer2D::GetStats().LineCount);
 			if (ImGui::Button("God mode"))
 			{
 				m_GodMode = !m_GodMode;

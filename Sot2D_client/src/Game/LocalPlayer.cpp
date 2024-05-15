@@ -1,15 +1,17 @@
 #include "LocalPlayer.h"
 
-#define PI 3.14159265359f
+
+constexpr float PI = 3.14159265359f;
 
 LocalPlayer* LocalPlayer::s_Instance = nullptr;
 
 
-LocalPlayer::LocalPlayer() : Player(), m_CameraController(16.0f / 9.0f), m_OldPos(m_Pos), m_ActualRotation(0.0f), m_Running(false)
+LocalPlayer::LocalPlayer()
+	: m_CameraController(16.0f / 9.0f), m_Pos(), m_OldPos(m_Pos), m_Rotation(), m_ActualRotation(0.0f), m_Running(false)
 {
 	EIS_ASSERT(!s_Instance, "Local player already exists!");
 
-	LoadTexture();
+	m_Texture = Eis::Texture2D::Create("assets/textures/player.png");
 
 	m_CameraController.SetZoomSpeedEffect(false);
 	m_CameraController.SetMinZoom(2.0f);

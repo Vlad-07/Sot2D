@@ -8,14 +8,14 @@ class Player
 public:
 	Player() : m_Pos(0), m_Rotation(0.0f) {}
 	Player(const glm::vec2& pos) : m_Pos(pos), m_Rotation(0.0f) {}
-	virtual ~Player() = default;
+	~Player() = default;
 
 
 	glm::vec2 GetPos() const { return m_Pos; }
-	virtual void SetPos(const glm::vec2& pos);
+	void SetPos(const glm::vec2& pos);
 
 	float GetRotation() const { return m_Rotation; }
-	virtual void SetRotation(float rot) { m_Rotation = rot; }
+	void SetRotation(float rot) { m_Rotation = rot; }
 
 	void LoadTexture(const std::string& texturePath = "assets/textures/player.png")
 	{ m_Texture = Eis::Texture2D::Create(texturePath); }
