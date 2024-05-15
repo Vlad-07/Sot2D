@@ -6,15 +6,12 @@ void ServerLayer::ClientConnectedCallback(const Eis::ClientInfo& info)
 {
 	EIS_PROFILE_FUNCTION();
 
-	static ClientId globalIdIncrementor = 0;
-	if (ServerLayer::GetClients().size() == 0) globalIdIncrementor = 0;
-
-	NetClient c(globalIdIncrementor++, info.Id);
+	NetClient c(info.Id);
 
 	// Inform everyone
 	{
-		EIS_INFO("{0} connected ({1})", c.GetClientId(), info.ConnectionDescription); // local included
-		UpdatePacket packet(UpdateType::CONNECT, c.GetClientId(), nullptr, 0);
+		EIS_INFO("{0} connected ({1})", c.GetNetworkId(), info.ConnectionDescription); // local included
+		UpdatePacket packet(UpdateType::CONNECT, c.GetNetworkId(), nullptr, 0);
 		ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(packet), info.Id);
 	}
 
@@ -24,7 +21,7 @@ void ServerLayer::ClientConnectedCallback(const Eis::ClientInfo& info)
 		{
 			InitPlayersPacket::PlayerData* data = (InitPlayersPacket::PlayerData*)_malloca(ServerLayer::GetClients().size() * sizeof(InitPlayersPacket::PlayerData));
 			for (uint32_t i = 0; i < ServerLayer::GetClients().size(); i++)
-				data[i] = { ServerLayer::GetClients()[i].GetClientId(), ServerLayer::GetClients()[i].GetPos() };
+				data[i] = { ServerLayer::GetClients()[i].GetNetworkId(), ServerLayer::GetClients()[i].GetPos() };
 			InitPlayersPacket packet((uint32_t)ServerLayer::GetClients().size(), data);
 			_freea(data);
 			ServerLayer::Get().m_Server.SendBufferToClient(info.Id, InitPlayersPacket::CreateBuffer(packet));
@@ -57,7 +54,7 @@ void ServerLayer::ClientDisconnectedCallback(const Eis::ClientInfo& info)
 
 	auto clientIt = ServerLayer::FindClientByNetId(info.Id);
 
-	UpdatePacket m(UpdateType::DISCONNECT, clientIt->GetClientId(), nullptr, 0);
+	UpdatePacket m(UpdateType::DISCONNECT, clientIt->GetNetworkId(), nullptr, 0);
 	ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(m), info.Id);
 
 	ServerLayer::GetClients().erase(clientIt);
@@ -106,7 +103,7 @@ void ServerLayer::DataRecievedCallback(const Eis::ClientInfo& info, Eis::Buffer&
 
 			UpdatePacket movementPacket(
 				UpdateType::MOVEMENT,
-				client.GetClientId(),
+				client.GetNetworkId(),
 				&newPos,
 				sizeof(glm::vec2));
 			ServerLayer::Get().m_Server.SendBufferToAllClients(UpdatePacket::CreateBuffer(movementPacket), info.Id);

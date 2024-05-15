@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eis/Core/Buffer.h>
+#include <Eis/Networking/Server.h>
 #include "../../Sot2D_client/src/Game/Island.h" // HACK
 
 enum class PacketType : uint8_t
@@ -36,7 +37,7 @@ class InitPlayersPacket : public Packet
 public:
 	struct PlayerData
 	{
-		ClientId id;
+		Eis::ClientID id;
 		glm::vec2 pos;
 	};
 
@@ -63,43 +64,17 @@ private:
 	uint32_t m_PlayerCount;
 	PlayerData* m_PlayerData;
 };
-/*
-class InitTerrainPacket : public Packet
-{
-public:
-	InitTerrainPacket(uint32_t islandCount, Island* data)
-		: Packet(PacketType::INIT_TERRAIN), m_IslandCount(islandCount), m_IslandData(data) {}
-	~InitTerrainPacket() = default;
-
-	uint32_t GetIslandCount() const { return m_IslandCount; }
-
-	static Eis::Buffer CreateBuffer(const InitTerrainPacket& m)
-	{
-		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
-		b.Allocate(sizeof(InitTerrainPacket));
-		b.Write(&m, sizeof(InitTerrainPacket));
-		if (m.m_IslandData == nullptr)
-			return b;
-		b.Resize(b.GetSize() + m.m_IslandCount * sizeof(Island));
-		b.Write(m.m_IslandData, m.m_IslandCount  * sizeof(Island), sizeof(InitTerrainPacket));
-		return b;
-	}
-
-private:
-	uint32_t m_IslandCount;
-	Island* m_IslandData;
-};//*/
 
 
 class UpdatePacket : public Packet
 {
 public:
-	UpdatePacket(UpdateType type, ClientId id, void* data, uint32_t dataSize)
+	UpdatePacket(UpdateType type, Eis::ClientID id, void* data, uint32_t dataSize)
 		: Packet(PacketType::UPDATE), m_UpdateType(type), m_Id(id), m_Data(data), m_DataSize(dataSize) {}
 	~UpdatePacket() = default;
 
 	UpdateType GetUpdateType() const { return m_UpdateType; }
-	ClientId GetClientId() const { return m_Id; }
+	Eis::ClientID GetClientId() const { return m_Id; }
  	uint32_t GetDataSize() const { return m_DataSize; }
 
 	static Eis::Buffer CreateBuffer(const UpdatePacket& m)
@@ -116,7 +91,7 @@ public:
 
 private:
 	UpdateType m_UpdateType;
-	ClientId m_Id;
+	Eis::ClientID m_Id;
 	void* m_Data;
 	uint32_t m_DataSize;
 };

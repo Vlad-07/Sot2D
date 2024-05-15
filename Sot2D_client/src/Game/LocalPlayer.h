@@ -21,8 +21,8 @@ public:
 	void SetPos(const glm::vec2& pos);
 	bool HasMoved() { if (m_OldPos != m_Pos) { m_OldPos = m_Pos; return true; } else return false; }
 	
-	float GetRotation() const { return m_Rotation; }
-	void SetRotation(float rot) { m_Rotation = m_ActualRotation = rot; }
+	float GetRotation() const { return m_DisplayRotation; }
+	void SetRotation(float rot) { m_DisplayRotation = m_ActualRotation = rot; }
 
 	auto& GetCameraController() { return m_CameraController; }
 
@@ -35,7 +35,7 @@ private:
 
 	glm::vec2 m_Pos,
 			  m_OldPos;
-	float m_Rotation,
+	float m_DisplayRotation,
 		  m_ActualRotation;
 	bool m_Running;
 

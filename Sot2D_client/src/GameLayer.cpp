@@ -56,8 +56,9 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	
 	// Local update
 	m_LocalPlayer.OnUpdate(ts);
-	for (NetPlayer& p : m_NetworkPlayers)
-		p.Interpolate();
+	// Remote update
+	for (NetworkPlayer& p : m_NetworkPlayers)
+		p.Update(ts);
 
 //	m_Terrain.UnloadFarIslands(m_LocalPlayer.GetPos());
 
@@ -74,13 +75,18 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	Eis::Renderer2D::Clear();
 	Eis::Renderer2D::BeginScene(m_LocalPlayer.GetCameraController().GetCamera());
 
+	// Draw ocean
 	Eis::Renderer2D::DrawQuad(m_LocalPlayer.GetPos(), glm::vec2(160 * 3, 90 * 3), glm::vec4(0, 0, 0.5f, 1)); // ocean
+	
+	// Draw terrain
 	m_Terrain.RenderIslands(m_LocalPlayer.GetPos());
 
-	for (const NetPlayer& p : m_NetworkPlayers)
-		Eis::Renderer2D::DrawRotatedQuad(p.GetPos(), glm::vec2(1), p.GetRotation() + glm::radians(20.0f), m_NetPlayerTex); // angle the mouche texture to forward
+	// Draw network players
+	for (const NetworkPlayer& p : m_NetworkPlayers)
+		Eis::Renderer2D::DrawRotatedQuad(p.GetPos(), glm::vec2(1), p.GetRotation() + 20.0f, m_NetPlayerTex); // angle the mouche texture to forward
 
-	Eis::Renderer2D::DrawRotatedQuad(m_LocalPlayer.GetPos(), glm::vec2(1), m_LocalPlayer.GetRotation() + glm::radians(20.0f), m_LocalPlayer.GetTexture());
+	// Draw local player
+	Eis::Renderer2D::DrawRotatedQuad(m_LocalPlayer.GetPos(), glm::vec2(1), m_LocalPlayer.GetRotation() + 20.0f, m_LocalPlayer.GetTexture());
 
 	Eis::Renderer2D::EndScene();
 }
@@ -119,6 +125,12 @@ void GameLayer::OnImGuiRender()
 	}
 	else // In game
 	{
+		#ifdef EIS_DEBUG
+		if (ImGui::Begin("Debug")) {
+
+		} ImGui::End();
+		#endif
+
 		if (m_PauseOpen) // Pause menu
 		{
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -206,13 +218,18 @@ void GameLayer::InitSession()
 	EIS_PROFILE_FUNCTION();
 
 	m_LocalPlayer.Init();
+	m_PauseOpen = false;
+	m_GodMode = false;
+}
+
+void GameLayer::Cleanup()
+{
 	m_NetworkPlayers.clear();
 	m_Terrain.Clear();
-	m_PauseOpen = false;
 }
 
 
-NetPlayer& GameLayer::GetClientById(ClientId id)
+NetworkPlayer& GameLayer::GetClientById(ClientId id)
 {
 	EIS_PROFILE_FUNCTION();
 
@@ -224,7 +241,7 @@ NetPlayer& GameLayer::GetClientById(ClientId id)
 	EIS_ASSERT(false, "Could not find client by NetworkID!");
 	throw;
 }
-std::vector<NetPlayer>::iterator GameLayer::FindClientById(ClientId id)
+std::vector<NetworkPlayer>::iterator GameLayer::FindClientById(ClientId id)
 {
 	EIS_PROFILE_FUNCTION();
 

@@ -4,10 +4,13 @@
 
 
 void GameLayer::ConnectedCallback()
-{	// k
+{
+	GameLayer::Get().InitSession();
 }
+
 void GameLayer::DisconnectedCallback()
-{	// k
+{
+	GameLayer::Get().Cleanup();
 }
 
 void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
@@ -29,10 +32,8 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 		for (uint32_t i = 0; i < initPlayersPacket.GetPlayerCount(); i++)
 		{
 			InitPlayersPacket::PlayerData pData = buf.Read<InitPlayersPacket::PlayerData>(sizeof(InitPlayersPacket) + i * sizeof(InitPlayersPacket::PlayerData));
-			NetPlayer p(pData.id, pData.pos);
-			p.LoadTexture();
-			GameLayer::GetNetworkPlayers().push_back(p);
-			GameLayer::GetNetworkPlayers().back().LoadTexture();
+
+			GameLayer::GetNetworkPlayers().emplace_back(pData.id, pData.pos);
 		}
 		break;
 	}
@@ -48,9 +49,7 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 
 		case UpdateType::CONNECT:
 		{
-			NetPlayer p(updatePacket.GetClientId());
-			p.LoadTexture();
-			GameLayer::GetNetworkPlayers().push_back(p);
+			GameLayer::GetNetworkPlayers().emplace_back(updatePacket.GetClientId());
 			break;
 		}
 
@@ -68,13 +67,13 @@ void GameLayer::DataReceivedCallback(Eis::Buffer& buf)
 
 		case UpdateType::TERRAIN:
 		{
-			GameLayer::Get().m_Terrain.m_TerrainMtx.lock();
+			GameLayer::GetTerrain().m_TerrainMtx.lock();
 			if (updatePacket.GetClientId())
-				GameLayer::Get().m_Terrain.Reserve(updatePacket.GetClientId());
+				GameLayer::GetTerrain().Reserve(updatePacket.GetClientId());
 
 			Island is = buf.Read<Island>(sizeof(UpdatePacket));
-			GameLayer::Get().m_Terrain.AddIsland(is);
-			GameLayer::Get().m_Terrain.m_TerrainMtx.unlock();
+			GameLayer::GetTerrain().AddIsland(is);
+			GameLayer::GetTerrain().m_TerrainMtx.unlock();
 			break;
 		}
 		}

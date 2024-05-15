@@ -9,9 +9,6 @@
 #include "Networking/NetworkPlayer.h"
 
 
-// TODO: net player rotation
-// BUG: glitchy local player pos
-
 class GameLayer : public Eis::Layer
 {
 public:
@@ -32,17 +29,19 @@ private:
 
 	static GameLayer& Get() { return *s_Instance; }
 	static auto& GetNetworkPlayers() { return s_Instance->m_NetworkPlayers; }
+	static auto& GetTerrain() { return s_Instance->m_Terrain; }
 
-	NetPlayer& GetClientById(ClientId id);
-	std::vector<NetPlayer>::iterator FindClientById(ClientId id);
+	NetworkPlayer& GetClientById(ClientId id);
+	std::vector<NetworkPlayer>::iterator FindClientById(ClientId id);
 
 	void InitSession();
+	void Cleanup();
 
 private:
 	Eis::Client m_Client;
 	LocalPlayer m_LocalPlayer;
 
-	std::vector<NetPlayer> m_NetworkPlayers;
+	std::vector<NetworkPlayer> m_NetworkPlayers;
 
 	Terrain m_Terrain;
 
@@ -51,7 +50,7 @@ private:
 	bool m_GodMode;
 
 	Eis::Ref<Eis::Texture2D> m_Map,
-							 m_NetPlayerTex; // HACK: NetPlayer textures are buggy
+							 m_NetPlayerTex; // HACK: broken NetworkPlayer texture
 
 	Eis::TimeStep m_DeltaTime;
 

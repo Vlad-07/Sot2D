@@ -74,7 +74,7 @@ void ServerLayer::OnImGuiRender()
 		ImGui::Text("%i clients connected", m_Clients.size());
 		for (uint32_t i = 0; i < m_Clients.size(); i++)
 		{
-			ImGui::Text("%i ", m_Clients[i].GetClientId());
+			ImGui::Text("%i ", m_Clients[i].GetNetworkId());
 			ImGui::SameLine();
 			if (ImGui::Button("Kick"))
 			{
