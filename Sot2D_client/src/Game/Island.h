@@ -11,7 +11,7 @@ enum class Tile : uint8_t
 };
 
 static constexpr float c_TileSize = 2.0f;
-static constexpr int c_MaxTilemapSize = 101;
+static constexpr int c_MaxTilemapSize = 100;
 typedef std::array<std::array<Tile, c_MaxTilemapSize>, c_MaxTilemapSize> Tilemap;
 
 class Island
@@ -25,6 +25,9 @@ public:
 
 	struct Props
 	{
+		Props() : type(Type::NONE), size(Size::NONE) {}
+		Props(Type t, Size s) : type(t), size(s) {}
+
 		Type type;
 		Size size;
 	};
@@ -36,19 +39,19 @@ public:
 	Island(const Island&& i) noexcept;
 	~Island() = default;
 
-	// Server only:
+	// Server only
 	void Init();
 
-	// Client only:
+	// Client only
 	void Render() const;
 
 	glm::vec2 GetCenterPos() const { return m_CenterPos; }
 
-	void operator =(const Island& i);
-
 	static Type GetRandomType();
 	static Size GetRandomSize();
 	static Props GetRandomProps();
+
+	void operator=(const Island& i);
 
 private:
 	static void CreateIslandTilemap(Island& island);

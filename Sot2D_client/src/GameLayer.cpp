@@ -7,9 +7,9 @@
 GameLayer* GameLayer::s_Instance = nullptr;
 
 
-GameLayer::GameLayer() : Layer("GameLayer"), m_LocalPlayer(), m_PauseOpen(false), m_PerformanceOpen(false), m_GodMode(false), m_DeltaTime(), m_Terrain()
+GameLayer::GameLayer() : Layer("GameLayer"), m_LocalPlayer(), m_PauseOpen(false), m_PerformanceOpen(false), m_DeltaTime(), m_World()
 {
-	EIS_ASSERT(!s_Instance, "Layer already exists!");
+	EIS_ASSERT(!s_Instance, "GameLayer already exists!");
 	s_Instance = this;
 }
 GameLayer::~GameLayer()
@@ -31,9 +31,7 @@ void GameLayer::OnAttach()
 	m_Client.SetDataReceivedCallback(DataReceivedCallback);
 
 	// Init game
-	m_Map = Eis::Texture2D::Create("assets/textures/sotmap.png");
-	m_NetPlayerTex = Eis::Texture2D::Create("assets/textures/player.png");
-
+	ImGui::GetStyle().WindowBorderSize = 0.0f;
 }
 void GameLayer::OnDetach()
 {
@@ -56,11 +54,22 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	
 	// Local update
 	m_LocalPlayer.OnUpdate(ts);
+
+	if (m_GodMode)
+	{
+		if (Eis::Input::IsKeyPressed(EIS_KEY_F1))
+			m_LocalPlayer.GetCameraController().SetZoom(m_LocalPlayer.GetCameraController().GetZoom() + 10.0f);
+		else if (Eis::Input::IsKeyPressed(EIS_KEY_F2))
+			m_LocalPlayer.GetCameraController().SetZoom(m_LocalPlayer.GetCameraController().GetZoom() - 10.0f);
+	}
+
 	// Remote update
 	for (NetworkPlayer& p : m_NetworkPlayers)
+	{
+		if (!p.GetTexture())
+			p.LoadTexture();
 		p.Update(ts);
-
-//	m_Terrain.UnloadFarIslands(m_LocalPlayer.GetPos());
+	}
 
 	// Update Network
 	if (m_LocalPlayer.HasMoved())
@@ -79,14 +88,18 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 	Eis::Renderer2D::DrawQuad(m_LocalPlayer.GetPos(), glm::vec2(160 * 3, 90 * 3), glm::vec4(0, 0, 0.5f, 1)); // ocean
 	
 	// Draw terrain
-	m_Terrain.RenderIslands(m_LocalPlayer.GetPos());
+	m_World.RenderIslands(m_LocalPlayer.GetPos());
 
 	// Draw network players
 	for (const NetworkPlayer& p : m_NetworkPlayers)
-		Eis::Renderer2D::DrawRotatedQuad(p.GetPos(), glm::vec2(1), p.GetRotation() + 20.0f, m_NetPlayerTex); // angle the mouche texture to forward
+		Eis::Renderer2D::DrawRotatedQuad(p.GetPos(), glm::vec2(1), p.GetRotation() + 20.0f, p.GetTexture()); // angle the mouche texture to forward
 
 	// Draw local player
 	Eis::Renderer2D::DrawRotatedQuad(m_LocalPlayer.GetPos(), glm::vec2(1), m_LocalPlayer.GetRotation() + 20.0f, m_LocalPlayer.GetTexture());
+
+	// Draw the F O G
+	if (glm::length(m_LocalPlayer.GetPos()) > m_World.GetWorldSize() - c_RenderDistance || c_InfiniteRendering)
+		Eis::Renderer2D::DrawCircle(glm::vec2(0.0f), glm::vec2(m_World.GetWorldSize() * 2.5f), glm::vec4(0.0f, 0.2f, 0.4f, 1.0f), c_FogThickness, c_FogFade);
 
 	Eis::Renderer2D::EndScene();
 }
@@ -110,7 +123,10 @@ void GameLayer::OnImGuiRender()
 			ImGui::SetNextItemWidth(150.0f);
 			if (ImGui::InputText("##ip", ip, sizeof(ip), ImGuiInputTextFlags_EnterReturnsTrue)
 				|| ImGui::Button("Connect"))
+			{
+				InitSession();
 				m_Client.ConnectToServer(ip);
+			}
 			if (ImGui::Button("Quit"))
 				Eis::Application::ShouldClose();
 		}
@@ -125,40 +141,16 @@ void GameLayer::OnImGuiRender()
 	}
 	else // In game
 	{
-		#ifdef EIS_DEBUG
+	//	#ifdef EIS_DEBUG
 		if (ImGui::Begin("Debug")) {
-
-		} ImGui::End();
-		#endif
-
-		if (m_PauseOpen) // Pause menu
-		{
-			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-			ImGui::SetNextWindowSize(ImVec2(100, 50), ImGuiCond_Appearing);
-			ImGui::Begin("##PauseMenu", nullptr, m_CommonFlags | ImGuiWindowFlags_NoTitleBar);
-			if (ImGui::Button("Disconnect"))
-				m_Client.Disconnect();
-			ImGui::End();
-		}
-		if (m_PerformanceOpen) // Performance menu
-		{
-			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Appearing);
-			ImGui::SetNextWindowSize(ImVec2(130, 120), ImGuiCond_Appearing);
-			ImGui::SetNextWindowBgAlpha(0.1f);
-			ImGui::Begin("##PerformanceMenu", nullptr, m_CommonFlags | ImGuiWindowFlags_NoTitleBar);
-			ImGui::Text("%.0f FPS (%.1f ms)", 1.0f / m_DeltaTime, m_DeltaTime.GetMilliseconds());
-			ImGui::Text("Draw calls:   %i", Eis::Renderer2D::GetStats().DrawCalls);
-			ImGui::Text("Quad count:   %i", Eis::Renderer2D::GetStats().QuadCount);
-			ImGui::Text("Circle count: %i", Eis::Renderer2D::GetStats().CircleCount);
-			ImGui::Text("Line count:   %i", Eis::Renderer2D::GetStats().LineCount);
 			if (ImGui::Button("God mode"))
 			{
 				m_GodMode = !m_GodMode;
 				if (m_GodMode) // enable
 				{
-					m_LocalPlayer.GetCameraController().SetMaxZoom(1000.0f);
+					m_LocalPlayer.GetCameraController().SetMaxZoom(1000000.0f);
 					m_LocalPlayer.GetCameraController().SetZoom(100.0f);
-					m_LocalPlayer.GetCameraController().SetCameraSpeed(200.0f);
+					m_LocalPlayer.GetCameraController().SetCameraSpeed(250.0f);
 				}
 				else // disable
 				{
@@ -167,6 +159,39 @@ void GameLayer::OnImGuiRender()
 					m_LocalPlayer.GetCameraController().SetMaxZoom(6.0f);
 				}
 			}
+
+			ImGui::Checkbox("Infinite Rendering", &c_InfiniteRendering);
+
+			ImGui::Text("%.1f", m_World.GetWorldSize());
+			ImGui::Text("%i", m_World.GetIslandCount());
+			ImGui::Text("%i", m_World.GetIslandCap());
+		} ImGui::End();
+	//	#endif
+
+		if (m_PauseOpen) // Pause menu
+		{
+			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			ImGui::SetNextWindowSize(ImVec2(100, 50), ImGuiCond_Appearing);
+			ImGui::Begin("##PauseMenu", nullptr, m_CommonFlags | ImGuiWindowFlags_NoTitleBar);
+			if (ImGui::Button("Disconnect"))
+			{
+				m_Client.Disconnect();
+				Cleanup();
+			}
+			ImGui::End();
+		}
+		if (m_PerformanceOpen) // Performance menu
+		{
+			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(ImVec2(150, 120), ImGuiCond_Appearing);
+			ImGui::SetNextWindowBgAlpha(0.2f);
+			ImGui::Begin("##PerformanceMenu", nullptr,
+						 m_CommonFlags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoFocusOnAppearing);
+			ImGui::Text("%.0f FPS (%.1f ms)", 1.0f / m_DeltaTime, m_DeltaTime.GetMilliseconds());
+			ImGui::Text("Draw calls:   %i", Eis::Renderer2D::GetStats().DrawCalls);
+			ImGui::Text("Quad count:   %i", Eis::Renderer2D::GetStats().QuadCount);
+			ImGui::Text("Circle count: %i", Eis::Renderer2D::GetStats().CircleCount);
+			ImGui::Text("Line count:   %i", Eis::Renderer2D::GetStats().LineCount);
 			ImGui::End();
 		}
 	}
@@ -176,10 +201,10 @@ void GameLayer::OnEvent(Eis::Event& e)
 {
 	EIS_PROFILE_FUNCTION();
 
-	m_LocalPlayer.GetCameraController().OnEvent(e);
-
 	if (m_Client.GetConnectionStatus() != Eis::Client::Connected)
 		return;
+
+	m_LocalPlayer.GetCameraController().OnEvent(e);
 
 	Eis::EventDispatcher d(e);
 	d.Dispatch<Eis::KeyPressedEvent>([this](Eis::KeyPressedEvent& e) -> bool
@@ -192,20 +217,6 @@ void GameLayer::OnEvent(Eis::Event& e)
 		if (e.GetKeyCode() == EIS_KEY_F3)
 		{
 			m_PerformanceOpen = !m_PerformanceOpen;
-			return true;
-		}
-		if (e.GetKeyCode() == EIS_KEY_LEFT_SHIFT)
-		{
-			m_LocalPlayer.SetRunning(true);
-			return true;
-		}
-		return false;
-	});
-	d.Dispatch<Eis::KeyReleasedEvent>([this](Eis::KeyReleasedEvent e) -> bool
-	{
-		if (e.GetKeyCode() == EIS_KEY_LEFT_SHIFT)
-		{
-			m_LocalPlayer.SetRunning(false);
 			return true;
 		}
 		return false;
@@ -225,7 +236,7 @@ void GameLayer::InitSession()
 void GameLayer::Cleanup()
 {
 	m_NetworkPlayers.clear();
-	m_Terrain.Clear();
+	m_World.Reset();
 }
 
 

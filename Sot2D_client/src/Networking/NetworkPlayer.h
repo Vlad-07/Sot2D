@@ -8,10 +8,8 @@ class NetworkPlayer
 {
 public:
 	NetworkPlayer(ClientId id, const glm::vec2& pos = glm::vec2(0))
-		: m_Id(id), m_DisplayPos(pos), m_ActualPos(pos), m_DisplayRotation(), m_ActualRotation()
-	{
-		LoadTexture();
-	}
+		: m_Id(id), m_DisplayPos(pos), m_ActualPos(pos), m_DisplayRotation(), m_ActualRotation() {}
+
 
 	void LoadTexture() { m_Texture = Eis::Texture2D::Create("assets/textures/player.png"); }
 	const auto& GetTexture() const { return m_Texture; }

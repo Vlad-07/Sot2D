@@ -57,20 +57,24 @@ void ServerLayer::OnImGuiRender()
 		ImGui::Text("Port: ");
 		ImGui::SameLine();
 		ImGui::InputInt("##port", &port, 0, 0);
-
-		if (ImGui::Button("Start"))
+		constexpr ImVec2 size(45, 0);
+		if (ImGui::Button("Start", size))
 		{
-			m_TerrainManager.InitStartingArea();
+			Init();
 			m_Server.SetPort(port);
 			m_Server.Start();
 		}
-		if (ImGui::Button("Quit"))
+
+		if (ImGui::Button("Quit", size))
 			Eis::Application::ShouldClose();
 	}
 	else // Running
 	{
 		if (ImGui::Button("Stop"))
-			m_Server.Stop(), m_Clients.clear(), m_TerrainManager.Clear();
+		{
+			m_Server.Stop();
+			Cleanup();
+		}
 		ImGui::Text("%i clients connected", m_Clients.size());
 		for (uint32_t i = 0; i < m_Clients.size(); i++)
 		{
@@ -112,4 +116,15 @@ std::vector<NetClient>::iterator ServerLayer::FindClientByNetId(Eis::ClientID ne
 	}
 	EIS_ASSERT(false, "Could not find client by NetworkID!");
 	return ServerLayer::GetClients().end();
+}
+
+void ServerLayer::Init()
+{
+	m_TerrainManager.Init();
+}
+
+void ServerLayer::Cleanup()
+{
+	m_Clients.clear();
+	m_TerrainManager.Clear();
 }

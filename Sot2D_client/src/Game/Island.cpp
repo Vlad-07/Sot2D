@@ -78,8 +78,6 @@ void Island::Render() const
 
 	EIS_ASSERT(m_Inited, "Island not initialized!");
 
-//	Eis::Renderer2D::DrawCircle(m_CenterPos, glm::vec2(m_Radius), m_Col);
-
 	for (uint32_t yOff = 0; yOff < m_UsefulSurface; yOff++)
 	for (uint32_t xOff = 0; xOff < m_UsefulSurface; xOff++)
 	{
@@ -134,8 +132,8 @@ Island::Props Island::GetRandomProps()
 
 
 
-static int dx[]{ -1, -1, -1,  0,  1, 1, 1, 0 },
-		   dy[]{ 1,  0, -1, -1, -1, 0, 1, 1 };
+static constexpr int dx[]{ -1, -1, -1,  0,  1, 1, 1, 0 },
+					 dy[]{  1,  0, -1, -1, -1, 0, 1, 1 };
 
 void Island::CreateIslandTilemap(Island& island)
 {
@@ -194,10 +192,9 @@ void Island::CreateIslandTilemap(Island& island)
 //	_RETRY:
 		float distToCenter = ((pos.x - (island.m_UsefulSurface + 1) / 2.0f) * (pos.x - (island.m_UsefulSurface + 1) / 2.0f)
 							+ (pos.y - (island.m_UsefulSurface + 1) / 2.0f) * (pos.y - (island.m_UsefulSurface + 1) / 2.0f)) / (island.m_UsefulSurface * island.m_UsefulSurface / 4);
-		distToCenter += Eis::Random::Float(-0.1f, 0.1f);
-		if (distToCenter < 0.3f)
+		if (distToCenter + Eis::Random::Float(-0.02f, 0.02f) < 0.3f)
 			island.m_Tilemap[pos.y][pos.x] = Tile::GRASS;
-		else if (distToCenter < 0.7f)
+		else if (distToCenter + Eis::Random::Float(-0.1f, 0.1f) < 0.7f)
 			island.m_Tilemap[pos.y][pos.x] = Tile::SAND;
 		else
 			island.m_Tilemap[pos.y][pos.x] = Tile::WATER;

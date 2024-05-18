@@ -28,14 +28,20 @@ private:
 
 	static ServerLayer& Get() { return *s_Instance; }
 	static auto& GetClients() { return s_Instance->m_Clients; }
+	static auto& GetServer() { return s_Instance->m_Server; }
 
 	static NetClient& GetClientByNetId(Eis::ClientID netId);
 	static std::vector<NetClient>::iterator FindClientByNetId(Eis::ClientID netId);
+
+	void Init();
+	void Cleanup();
 
 private:
 	Eis::Server m_Server;
 	std::vector<NetClient> m_Clients;
 	TerrainManager m_TerrainManager;
+
+	const float c_KillDist = 5290.0f;
 
 private:
 	static ServerLayer* s_Instance;

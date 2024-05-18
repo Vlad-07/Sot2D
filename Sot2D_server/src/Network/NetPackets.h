@@ -6,7 +6,7 @@
 
 enum class PacketType : uint8_t
 {
-	NONE = 0, INIT_PLAYERS, /*INIT_TERRAIN,*/ UPDATE
+	NONE = 0, INIT_PLAYERS, INIT_TERRAIN, UPDATE
 };
 
 enum class UpdateType : uint8_t
@@ -66,10 +66,34 @@ private:
 };
 
 
+class InitTerrainPacket : public Packet
+{
+public:
+	InitTerrainPacket(uint32_t islandCount, float worldSize)
+		: Packet(PacketType::INIT_TERRAIN), m_IslandCount(islandCount), m_WorldSize(worldSize) {}
+	~InitTerrainPacket() = default;
+
+	uint32_t GetIslandCount() const { return m_IslandCount; }
+	float GetWorldSize() const { return m_WorldSize; }
+
+	static Eis::Buffer CreateBuffer(const InitTerrainPacket& m)
+	{
+		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
+		b.Allocate(sizeof(InitTerrainPacket));
+		b.Write(&m, sizeof(InitTerrainPacket));
+		return b;
+	}
+
+private:
+	uint32_t m_IslandCount;
+	float m_WorldSize;
+};
+
+
 class UpdatePacket : public Packet
 {
 public:
-	UpdatePacket(UpdateType type, Eis::ClientID id, void* data, uint32_t dataSize)
+	UpdatePacket(UpdateType type, Eis::ClientID id, const void* data, uint32_t dataSize)
 		: Packet(PacketType::UPDATE), m_UpdateType(type), m_Id(id), m_Data(data), m_DataSize(dataSize) {}
 	~UpdatePacket() = default;
 
@@ -92,6 +116,6 @@ public:
 private:
 	UpdateType m_UpdateType;
 	Eis::ClientID m_Id;
-	void* m_Data;
+	const void* m_Data;
 	uint32_t m_DataSize;
 };

@@ -1,22 +1,19 @@
 #include "LocalPlayer.h"
 
+#include "GameLayer.h"
 
-static constexpr float PI = 3.14159265359f;
 
 LocalPlayer* LocalPlayer::s_Instance = nullptr;
 
 
-LocalPlayer::LocalPlayer()
-	: m_CameraController(16.0f / 9.0f), m_Pos(), m_OldPos(m_Pos), m_DisplayRotation(), m_ActualRotation(0.0f), m_Running(false)
+LocalPlayer::LocalPlayer() : m_CameraController(16.0f / 9.0f)
 {
 	EIS_ASSERT(!s_Instance, "Local player already exists!");
+	s_Instance = this;
 
 	m_Texture = Eis::Texture2D::Create("assets/textures/player.png");
 
-	m_CameraController.SetZoomSpeedEffect(false);
-	m_CameraController.SetMinZoom(2.0f);
-	m_CameraController.SetMaxZoom(6.0f);
-	m_CameraController.SetCameraSpeed(c_WalkSpeed);
+	Init();
 }
 LocalPlayer::~LocalPlayer()
 {
@@ -31,17 +28,23 @@ void LocalPlayer::Init()
 	m_CameraController.SetCameraSpeed(c_WalkSpeed);
 	m_CameraController.SetMinZoom(2.0f);
 	m_CameraController.SetMaxZoom(8.0f);
-	m_CameraController.SetZoom(2.0f);
+	m_CameraController.SetZoom(5.0f);
+	m_CameraController.SetZoomSpeedEffect(false);
 }
 
 void LocalPlayer::OnUpdate(Eis::TimeStep ts)
 {
+	// Position
 	m_CameraController.OnUpdate(ts);
 	SetPos(m_CameraController.GetCamera().GetPosition());
 
+	// Sprint
+	if (!GameLayer::Get().m_GodMode)
+		m_CameraController.SetCameraSpeed(Eis::Input::IsKeyPressed(EIS_KEY_LEFT_SHIFT) ? c_RunSpeed : c_WalkSpeed);
+
+	// Rotation
 	if (fabs(m_ActualRotation - m_DisplayRotation) > 181.0f) // fix going from -pi to pi/2
 		m_DisplayRotation += 360.0f * (m_ActualRotation - m_DisplayRotation > 0.0f ? 1.0f : -1.0f);
-
 	m_DisplayRotation += (m_ActualRotation - m_DisplayRotation) * 15.0f * ts; // interpolate rotation
 }
 
