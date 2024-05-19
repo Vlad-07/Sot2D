@@ -1,6 +1,5 @@
 #include "GameLayer.h"
 
-#include <glm/gtc/type_ptr.hpp>
 #include "../../Sot2D_server/src/Network/NetPackets.h" // HACK
 
 
@@ -51,7 +50,7 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 		Eis::Renderer2D::Clear();
 		return;
 	}
-	
+
 	// Local update
 	m_LocalPlayer.OnUpdate(ts);
 
@@ -63,20 +62,16 @@ void GameLayer::OnUpdate(Eis::TimeStep ts)
 			m_LocalPlayer.GetCameraController().SetZoom(m_LocalPlayer.GetCameraController().GetZoom() - 10.0f);
 	}
 
+	// Network update
+	if (m_LocalPlayer.HasMoved())
+		m_Client.SendData(MovementPlayerUpdatePacket(0, m_LocalPlayer.GetPos()));
+
 	// Remote update
 	for (NetworkPlayer& p : m_NetworkPlayers)
 	{
 		if (!p.GetTexture())
-			p.LoadTexture();
+			p.LoadTexture(); // BUG: if player is added from net thread between here and net player rendering, the texture wont be loaded thus the app crashing
 		p.Update(ts);
-	}
-
-	// Update Network
-	if (m_LocalPlayer.HasMoved())
-	{
-		glm::vec2 newPos = m_LocalPlayer.GetPos();
-		UpdatePacket packet(UpdateType::MOVEMENT, 0, &newPos, sizeof(glm::vec2));
-		m_Client.SendBuffer(UpdatePacket::CreateBuffer(packet));
 	}
 
 	// Rendering
@@ -154,17 +149,12 @@ void GameLayer::OnImGuiRender()
 				}
 				else // disable
 				{
-					m_LocalPlayer.GetCameraController().SetCameraSpeed(5.0f);
-					m_LocalPlayer.GetCameraController().SetZoom(2.0f);
-					m_LocalPlayer.GetCameraController().SetMaxZoom(6.0f);
+					m_LocalPlayer.GetCameraController().SetZoom(10.0f);
+					m_LocalPlayer.GetCameraController().SetMaxZoom(10.0f);
 				}
 			}
 
 			ImGui::Checkbox("Infinite Rendering", &c_InfiniteRendering);
-
-			ImGui::Text("%.1f", m_World.GetWorldSize());
-			ImGui::Text("%i", m_World.GetIslandCount());
-			ImGui::Text("%i", m_World.GetIslandCap());
 		} ImGui::End();
 	//	#endif
 
@@ -232,15 +222,14 @@ void GameLayer::InitSession()
 	m_PauseOpen = false;
 	m_GodMode = false;
 }
-
 void GameLayer::Cleanup()
 {
 	m_NetworkPlayers.clear();
-	m_World.Reset();
+	m_World.Clear();
 }
 
 
-NetworkPlayer& GameLayer::GetClientById(ClientId id)
+NetworkPlayer& GameLayer::GetClientById(Eis::ClientID id)
 {
 	EIS_PROFILE_FUNCTION();
 
@@ -252,7 +241,7 @@ NetworkPlayer& GameLayer::GetClientById(ClientId id)
 	EIS_ASSERT(false, "Could not find client by NetworkID!");
 	throw;
 }
-std::vector<NetworkPlayer>::iterator GameLayer::FindClientById(ClientId id)
+std::vector<NetworkPlayer>::iterator GameLayer::FindClientById(Eis::ClientID id)
 {
 	EIS_PROFILE_FUNCTION();
 

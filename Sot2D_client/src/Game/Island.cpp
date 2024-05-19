@@ -23,6 +23,7 @@ void Island::operator=(const Island& i)
 	m_Props = i.m_Props;
 	m_UsefulSurface = i.m_UsefulSurface;
 	m_Tilemap = i.m_Tilemap;
+	m_Inited = false;
 }
 
 void Island::Init()

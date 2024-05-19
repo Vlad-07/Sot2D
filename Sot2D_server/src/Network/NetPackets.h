@@ -4,6 +4,7 @@
 #include <Eis/Networking/Server.h>
 #include "../../Sot2D_client/src/Game/Island.h" // HACK
 
+
 enum class PacketType : uint8_t
 {
 	NONE = 0, INIT_PLAYERS, INIT_TERRAIN, UPDATE
@@ -11,7 +12,17 @@ enum class PacketType : uint8_t
 
 enum class UpdateType : uint8_t
 {
-	NONE = 0, MOVEMENT, CONNECT, DISCONNECT, TERRAIN
+	NONE = 0, PLAYER, TERRAIN
+};
+
+enum class PlayerUpdateType
+{
+	NETWORK, MOVEMENT, SET
+};
+
+enum class NetworkPlayerUpdateType : uint8_t
+{
+	CONNECT, DISCONNECT
 };
 
 
@@ -22,9 +33,6 @@ public:
 	Packet(PacketType type) : m_Type(type) {}
 	virtual ~Packet() = default;
 
-	// Any data that needs to be transmitted is appended to the messages buffer
-//	static Eis::Buffer CreateBuffer() {}
-
 	PacketType GetType() const { return m_Type; }
 
 private:
@@ -32,90 +40,113 @@ private:
 };
 
 
+
 class InitPlayersPacket : public Packet
 {
 public:
-	struct PlayerData
-	{
-		Eis::ClientID id;
-		glm::vec2 pos;
-	};
+	InitPlayersPacket(uint8_t playerCount)
+		: Packet(PacketType::INIT_PLAYERS), m_PlayerCount(playerCount) {}
 
-public:
-	InitPlayersPacket(uint32_t playerCount, PlayerData* data)
-		: Packet(PacketType::INIT_PLAYERS), m_PlayerCount(playerCount), m_PlayerData(data) {}
-	~InitPlayersPacket() = default;
-
-	uint32_t GetPlayerCount() const { return m_PlayerCount; }
-
-	static Eis::Buffer CreateBuffer(const InitPlayersPacket& m)
-	{
-		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
-		b.Allocate(sizeof(InitPlayersPacket));
-		b.Write(&m, sizeof(InitPlayersPacket));
-		if (m.m_PlayerData == nullptr)
-			return b;
-		b.Resize(b.GetSize() + m.m_PlayerCount * sizeof(PlayerData));
-		b.Write(m.m_PlayerData, m.m_PlayerCount * sizeof(PlayerData), sizeof(InitPlayersPacket));
-		return b;
-	}
+	uint8_t GetPlayerCount() const { return m_PlayerCount; }
 
 private:
-	uint32_t m_PlayerCount;
-	PlayerData* m_PlayerData;
+	uint8_t m_PlayerCount;
 };
-
 
 class InitTerrainPacket : public Packet
 {
 public:
-	InitTerrainPacket(uint32_t islandCount, float worldSize)
+	InitTerrainPacket(uint8_t islandCount, float worldSize)
 		: Packet(PacketType::INIT_TERRAIN), m_IslandCount(islandCount), m_WorldSize(worldSize) {}
-	~InitTerrainPacket() = default;
 
-	uint32_t GetIslandCount() const { return m_IslandCount; }
+	uint8_t GetIslandCount() const { return m_IslandCount; }
 	float GetWorldSize() const { return m_WorldSize; }
 
-	static Eis::Buffer CreateBuffer(const InitTerrainPacket& m)
-	{
-		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
-		b.Allocate(sizeof(InitTerrainPacket));
-		b.Write(&m, sizeof(InitTerrainPacket));
-		return b;
-	}
-
 private:
-	uint32_t m_IslandCount;
+	uint8_t m_IslandCount;
 	float m_WorldSize;
 };
+
 
 
 class UpdatePacket : public Packet
 {
 public:
-	UpdatePacket(UpdateType type, Eis::ClientID id, const void* data, uint32_t dataSize)
-		: Packet(PacketType::UPDATE), m_UpdateType(type), m_Id(id), m_Data(data), m_DataSize(dataSize) {}
-	~UpdatePacket() = default;
+	UpdatePacket(UpdateType type) : Packet(PacketType::UPDATE), m_UpdateType(type) {}
+	virtual ~UpdatePacket() = default;
 
 	UpdateType GetUpdateType() const { return m_UpdateType; }
-	Eis::ClientID GetClientId() const { return m_Id; }
- 	uint32_t GetDataSize() const { return m_DataSize; }
-
-	static Eis::Buffer CreateBuffer(const UpdatePacket& m)
-	{
-		static Eis::Buffer b; // HACK: buffer destructor called twice a local object is returned (possibly)
-		b.Allocate(sizeof(UpdatePacket));
-		b.Write(&m, sizeof(UpdatePacket));
-		if (m.m_Data == nullptr)
-			return b;
-		b.Resize(b.GetSize() + m.m_DataSize);
-		b.Write(m.m_Data, m.m_DataSize, sizeof(UpdatePacket));
-		return b;
-	}
 
 private:
 	UpdateType m_UpdateType;
-	Eis::ClientID m_Id;
-	const void* m_Data;
-	uint32_t m_DataSize;
+};
+
+
+class PlayerUpdatePacket : public UpdatePacket
+{
+public:
+	PlayerUpdatePacket(PlayerUpdateType pUpType, Eis::ClientID id)
+		: UpdatePacket(UpdateType::PLAYER), m_PlayerUpdateType(pUpType), m_ClientId(id) {}
+	virtual ~PlayerUpdatePacket() = default;
+
+	PlayerUpdateType GetPlayerUpdateType() const { return m_PlayerUpdateType; }
+	Eis::ClientID GetClientId() const { return m_ClientId; }
+
+private:
+	PlayerUpdateType m_PlayerUpdateType;
+
+protected:
+	Eis::ClientID m_ClientId;
+};
+
+class NetworkPlayerUpdatePacket : public PlayerUpdatePacket
+{
+public:
+	NetworkPlayerUpdatePacket(Eis::ClientID id, NetworkPlayerUpdateType type)
+		: PlayerUpdatePacket(PlayerUpdateType::NETWORK, id), m_NetUpdateType(type) {}
+
+	NetworkPlayerUpdateType GetNetUpdateType() const { return m_NetUpdateType; }
+
+private:
+	NetworkPlayerUpdateType m_NetUpdateType;
+};
+
+class MovementPlayerUpdatePacket : public PlayerUpdatePacket
+{
+public:
+	MovementPlayerUpdatePacket(Eis::ClientID id, const glm::vec2& newPos)
+		: PlayerUpdatePacket(PlayerUpdateType::MOVEMENT, id), m_NewPos(newPos) {}
+
+	// Facilitate packet forwarding
+	void SetClientId(Eis::ClientID id) { m_ClientId = id; }
+
+	glm::vec2 GetNewPos() const { return m_NewPos; }
+
+private:
+	glm::vec2 m_NewPos;
+};
+
+class SetPlayerUpdatePacket : public PlayerUpdatePacket
+{
+public:
+	SetPlayerUpdatePacket(Eis::ClientID id, const glm::vec2& pos)
+		: PlayerUpdatePacket(PlayerUpdateType::SET, id), m_Pos(pos) {}
+
+	glm::vec2 GetPos() const { return m_Pos; }
+
+private:
+	glm::vec2 m_Pos;
+};
+
+
+class TerrainUpdatePacket : public UpdatePacket
+{
+public:
+	TerrainUpdatePacket(const Island& is)
+		: UpdatePacket(UpdateType::TERRAIN), m_Island(is) {}
+
+	Island GetIsland() const { return m_Island; }
+
+private:
+	Island m_Island;
 };

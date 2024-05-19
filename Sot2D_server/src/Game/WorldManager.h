@@ -10,11 +10,11 @@ static constexpr float		c_WorldSize			 = 5000.0f;
 static constexpr float		c_MinDistBetwIslands = 500.0f;
 
 
-class TerrainManager
+class WorldManager
 {
 public:
-	TerrainManager() = default;
-	~TerrainManager() = default;
+	WorldManager() = default;
+	~WorldManager() = default;
 
 	void Init();
 

@@ -16,15 +16,13 @@ public:
 
 	// Add and init island
 	void AddIsland(const Island& island);
-	void Reset() { m_Islands.clear(); m_WorldSize = 0.0f; }
-	void Reserve(uint32_t islandCount) { m_Islands.reserve(islandCount); }
+	void Clear() { m_Islands.clear(); m_WorldSize = 0.0f; }
+	void Reserve(uint8_t islandCount) { m_Islands.reserve(islandCount); }
 
 	void RenderIslands(const glm::vec2& playerPos);
 
 	float GetWorldSize() const { return m_WorldSize; }
 	void SetWorldSize(float size) { m_WorldSize = size; }
-	uint32_t GetIslandCount() const { return m_Islands.size(); }
-	uint32_t GetIslandCap() const { return m_Islands.capacity(); }
 
 public:
 	std::mutex m_TerrainMtx;

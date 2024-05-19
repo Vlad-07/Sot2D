@@ -1,4 +1,4 @@
-#include "TerrainManager.h"
+#include "WorldManager.h"
 
 #include <glm/gtc/random.hpp>
 #include <Eis/Core/Random.h>
@@ -6,7 +6,7 @@
 #include "../../Sot2D_client/src/Game/Island.cpp" // HACK: compile them files
 
 
-void TerrainManager::Init()
+void WorldManager::Init()
 {
 	EIS_PROFILE_FUNCTION();
 
@@ -29,7 +29,7 @@ void TerrainManager::Init()
 	}
 }
 
-float TerrainManager::DistToNearestIsland(const glm::vec2& pos)
+float WorldManager::DistToNearestIsland(const glm::vec2& pos)
 {
 	EIS_PROFILE_FUNCTION();
 

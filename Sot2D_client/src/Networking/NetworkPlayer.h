@@ -1,20 +1,22 @@
 #pragma once
 
-
-typedef uint32_t ClientId;
+namespace Eis
+{
+	using ClientID = uint32_t;
+}
 
 
 class NetworkPlayer
 {
 public:
-	NetworkPlayer(ClientId id, const glm::vec2& pos = glm::vec2(0))
+	NetworkPlayer(Eis::ClientID id, const glm::vec2& pos = glm::vec2(0))
 		: m_Id(id), m_DisplayPos(pos), m_ActualPos(pos), m_DisplayRotation(), m_ActualRotation() {}
 
 
 	void LoadTexture() { m_Texture = Eis::Texture2D::Create("assets/textures/player.png"); }
 	const auto& GetTexture() const { return m_Texture; }
 
-	ClientId GetId() const { return m_Id; }
+	Eis::ClientID GetId() const { return m_Id; }
 	float GetRotation() const { return m_DisplayRotation; }
 
 	glm::vec2 GetPos() const { return m_DisplayPos; }
@@ -36,7 +38,7 @@ public:
 	}
 
 private:
-	ClientId m_Id;
+	Eis::ClientID m_Id;
 	glm::vec2 m_DisplayPos,
 			  m_ActualPos;
 	float m_DisplayRotation,

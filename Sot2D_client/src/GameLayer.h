@@ -31,8 +31,8 @@ private:
 	static auto& GetNetworkPlayers() { return s_Instance->m_NetworkPlayers; }
 	static auto& GetWorld() { return s_Instance->m_World; }
 
-	NetworkPlayer& GetClientById(ClientId id);
-	std::vector<NetworkPlayer>::iterator FindClientById(ClientId id);
+	NetworkPlayer& GetClientById(Eis::ClientID id);
+	std::vector<NetworkPlayer>::iterator FindClientById(Eis::ClientID id);
 
 	void InitSession();
 	void Cleanup();

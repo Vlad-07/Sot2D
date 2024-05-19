@@ -4,7 +4,7 @@
 ServerLayer* ServerLayer::s_Instance = nullptr;
 
 
-ServerLayer::ServerLayer() : Layer("ServerLayer"), m_Server(8000), m_TerrainManager()
+ServerLayer::ServerLayer() : Layer("ServerLayer"), m_Server(8000), m_WorldManager()
 {
 	EIS_ASSERT(!s_Instance, "Main Layer already exists!");
 	s_Instance = this;
@@ -20,7 +20,8 @@ void ServerLayer::OnAttach()
 
 	// Init app
 	Eis::RenderCommands::Disable(0x0B71); // GL_DEPTH_TEST
-	Eis::RenderCommands::SetClearColor(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
+	Eis::Renderer2D::SetClearColor(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
+	Eis::Renderer2D::Shutdown(); // HACK: no headless config yet
 
 	// Init net
 	m_Server.SetClientConnectedCallback(ClientConnectedCallback);
@@ -32,7 +33,7 @@ void ServerLayer::OnDetach()
 	EIS_PROFILE_FUNCTION();
 
 	m_Server.Stop();
-	m_Clients.clear();
+	Cleanup();
 }
 
 
@@ -40,7 +41,7 @@ void ServerLayer::OnUpdate(Eis::TimeStep ts)
 {
 	EIS_PROFILE_FUNCTION();
 
-	Eis::RenderCommands::Clear();
+	Eis::Renderer2D::Clear();
 }
 
 void ServerLayer::OnImGuiRender()
@@ -49,7 +50,7 @@ void ServerLayer::OnImGuiRender()
 
 	ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetWorkCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSize(ImVec2(200, 120), ImGuiCond_Appearing);
-	ImGui::Begin("Server", nullptr, m_CommonFlags);
+	ImGui::Begin("Server", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
 	if (m_Server.IsRunning() == false) // Init
 	{
@@ -120,11 +121,10 @@ std::vector<NetClient>::iterator ServerLayer::FindClientByNetId(Eis::ClientID ne
 
 void ServerLayer::Init()
 {
-	m_TerrainManager.Init();
+	m_WorldManager.Init();
 }
-
 void ServerLayer::Cleanup()
 {
 	m_Clients.clear();
-	m_TerrainManager.Clear();
+	m_WorldManager.Clear();
 }

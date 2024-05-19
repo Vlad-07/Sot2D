@@ -6,7 +6,7 @@
 
 #include "Network/NetClient.h"
 
-#include "Game/TerrainManager.h"
+#include "Game/WorldManager.h"
 
 
 class ServerLayer : public Eis::Layer
@@ -26,7 +26,8 @@ private:
 	static void ClientDisconnectedCallback(const Eis::ClientInfo& info);
 	static void DataRecievedCallback(const Eis::ClientInfo& info, Eis::Buffer& buf);
 
-	static ServerLayer& Get() { return *s_Instance; }
+	static auto& Get() { return *s_Instance; }
+	static auto& GetWorldManager() { return s_Instance->m_WorldManager; }
 	static auto& GetClients() { return s_Instance->m_Clients; }
 	static auto& GetServer() { return s_Instance->m_Server; }
 
@@ -39,12 +40,10 @@ private:
 private:
 	Eis::Server m_Server;
 	std::vector<NetClient> m_Clients;
-	TerrainManager m_TerrainManager;
+	WorldManager m_WorldManager;
 
 	const float c_KillDist = 5290.0f;
 
 private:
 	static ServerLayer* s_Instance;
-
-	const ImGuiWindowFlags m_CommonFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar;
 };

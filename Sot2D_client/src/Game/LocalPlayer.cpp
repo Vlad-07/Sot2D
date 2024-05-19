@@ -27,7 +27,7 @@ void LocalPlayer::Init()
 	m_CameraController.SetPosition(glm::vec3(0));
 	m_CameraController.SetCameraSpeed(c_WalkSpeed);
 	m_CameraController.SetMinZoom(2.0f);
-	m_CameraController.SetMaxZoom(8.0f);
+	m_CameraController.SetMaxZoom(10.0f);
 	m_CameraController.SetZoom(5.0f);
 	m_CameraController.SetZoomSpeedEffect(false);
 }
